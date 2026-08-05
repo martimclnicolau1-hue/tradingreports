@@ -1,0 +1,75 @@
+{
+ "gbm": {
+  "top1_mean": 0.0496,
+  "top1_se": 0.0353,
+  "top3_mean": 0.0334,
+  "top3_se": 0.0241,
+  "n_folds": 30,
+  "quintile_means": [
+   -0.0004,
+   0.0004,
+   0.0044,
+   0.0023,
+   0.0089
+  ],
+  "spread_q5_q1": 0.0093,
+  "passes_2se": false,
+  "spearman_t": 1.16
+ },
+ "knn": {
+  "top1_mean": 0.0689,
+  "top1_se": 0.0475,
+  "top3_mean": 0.0183,
+  "top3_se": 0.0209,
+  "n_folds": 30,
+  "quintile_means": [
+   0.0034,
+   0.0002,
+   0.003,
+   0.0034,
+   0.0056
+  ],
+  "spread_q5_q1": 0.0023,
+  "passes_2se": false,
+  "spearman_t": 0.15
+ },
+ "conformal_coverage": 0.796,
+ "calibration": [
+  {
+   "bucket": "(0.0, 0.3]",
+   "n": 4186,
+   "previsto": 0.242,
+   "realizado": 0.226
+  },
+  {
+   "bucket": "(0.3, 0.4]",
+   "n": 1206,
+   "previsto": 0.324,
+   "realizado": 0.337
+  },
+  {
+   "bucket": "(0.4, 0.5]",
+   "n": 29,
+   "previsto": 0.429,
+   "realizado": 0.448
+  },
+  {
+   "bucket": "(0.5, 0.6]",
+   "n": 10,
+   "previsto": 0.53,
+   "realizado": 0.2
+  },
+  {
+   "bucket": "(0.6, 0.65]",
+   "n": 1,
+   "previsto": 0.613,
+   "realizado": 1.0
+  }
+ ],
+ "abstencao": {
+  "limiar": 0.65,
+  "pct_eventos_com_sinal": 0.0,
+  "hit_rate_no_sinal": null
+ },
+ "winner_top3": "gbm"
+}

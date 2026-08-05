@@ -1,0 +1,9 @@
+.venv/
+data/
+output/brief_*
+output/calendario.md
+output/*.csv
+output/*.log
+.DS_Store
+__pycache__/
+*.pyc
