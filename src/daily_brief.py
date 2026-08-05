@@ -280,6 +280,11 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
               f"{int(m['time_et'][:2])+5}:{m['time_et'][3:]} de Lisboa ({m['source']})")
 
     a("\n---")
+    a("*SIZING MEDIDO (autopsia walk-forward 2026-08-06, studies/loss_autopsy.md): os top-3 "
+      "diários renderam ~+0,8%/pick com P(y<0)≈49% e perda média de −8% quando corre mal; "
+      "como aposta binária na cauda, o Kelly do moonshot é ZERO — o EV vem do meio "
+      "(0 a +20%), não do bilhete de lotaria. Tradução: posições pequenas, muitos eventos, "
+      "nunca concentrar num nome.*")
     a("*Este brief é informação, não recomendação de compra ou venda. Cada secção cita "
       "o seu próprio veredito de validação sem lookahead — o que não estiver marcado "
       "como validado é indistinguível de ruído. Flags forenses são risco visível, não "

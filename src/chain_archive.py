@@ -71,6 +71,58 @@ def cpiv_and_os(sym):
         return None
 
 
+def bundle_signals():
+    """v12-B2: bundle de sinais do arquivo próprio (metodologia v12§5).
+    smirk (Xing-Zhang-Zhao: IV put ~0,80-moneyness − IV ATM call; POSITIVO=
+    proteção cara=bearish) computável já; implied_move_pctile (≥8 snapshots
+    do ticker) e otm_call_oi_d5 (≥5 dias consecutivos) ativam com a maturação
+    do arquivo — NaN até lá, nunca inventados. Persiste em
+    data/chains/signals_YYYY-MM-DD.csv e nas colunas do candidatos.csv."""
+    import glob
+    snaps = sorted(glob.glob("data/chains/????-??-??.csv"))
+    if not snaps:
+        return
+    hoje = snaps[-1][-14:-4]
+    ch = pd.read_csv(snaps[-1])
+    rows = []
+    for sym, g in ch.groupby("ticker"):
+        spot = float(g.spot.iloc[0])
+        c = g[(g.side == "C") & (g.iv > 0.01)]
+        p = g[(g.side == "P") & (g.iv > 0.01)]
+        smirk = np.nan
+        if len(c) and len(p):
+            atm_c = c.iloc[(c.strike - spot).abs().argsort()].iloc[0]
+            otm_p = p.iloc[(p.strike - 0.8 * spot).abs().argsort()].iloc[0]
+            if abs(otm_p.strike - 0.8 * spot) <= 0.1 * spot:
+                smirk = float(otm_p.iv - atm_c.iv)
+        # ΔOI de calls OTM (delta proxy: strike 1,05-1,25×spot) vs 5 snapshots atrás
+        oi_now = float(c[(c.strike >= 1.05 * spot) & (c.strike <= 1.25 * spot)]
+                       .openInterest.fillna(0).sum())
+        d_oi = np.nan
+        if len(snaps) >= 6:
+            old = pd.read_csv(snaps[-6])
+            oc = old[(old.ticker == sym) & (old.side == "C")]
+            if len(oc):
+                sp0 = float(oc.spot.iloc[0])
+                oi_old = float(oc[(oc.strike >= 1.05 * sp0) & (oc.strike <= 1.25 * sp0)]
+                               .openInterest.fillna(0).sum())
+                tot = float(oc.openInterest.fillna(0).sum())
+                if tot > 0:
+                    d_oi = (oi_now - oi_old) / tot
+        rows.append({"asof": hoje, "ticker": sym, "smirk": smirk,
+                     "otm_call_oi": oi_now, "otm_call_oi_d5": d_oi})
+    sig = pd.DataFrame(rows)
+    sig.to_csv(f"data/chains/signals_{hoje}.csv", index=False)
+    df = pd.read_csv("output/candidatos.csv")
+    m = sig.set_index("ticker")
+    df["smirk"] = df.ticker.map(m.smirk)
+    df["otm_call_oi_d5"] = df.ticker.map(m.otm_call_oi_d5)
+    df.to_csv("output/candidatos.csv", index=False)
+    ok = sig.smirk.notna().sum()
+    print(f"Bundle: {ok} smirks calculados | ΔOI ativa com ≥6 snapshots "
+          f"(temos {len(snaps)}) | signals_{hoje}.csv")
+
+
 def main():
     df = pd.read_csv("output/candidatos.csv")
     horizon = [(date.today() + timedelta(days=d)).isoformat() for d in range(0, 4)]
@@ -93,4 +145,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    if "--bundle-only" in sys.argv:
+        bundle_signals()
+    else:
+        main()
+        bundle_signals()
