@@ -508,6 +508,65 @@ graus abolidos):
 
 ---
 
+## REVISÃO v12 — 2026-08-06, registada ANTES de qualquer alteração de código
+
+Base: 3 investigações profundas (2026-08-05, ~50 pesquisas, fontes primárias)
+sobre remédios para as 6 falhas ideológicas definidas. Achado reordenador:
+**a colheita de moonshots via ações está EV-negativa** com os números atuais
+(0,08×+30% − 0,92×8% = −4,96%/evento; Kelly=0; breakeven exige perda média
+≤−2,6% vs −8% atual) — o gargalo é o LADO DA PERDA, não o hit-rate. Técnicas
+de tail-modeling (class weights, SMOTE, EVT, quantile q95): NO-GO documentado
+— a P(≥20%) calibrada isotónica JÁ é a ferramenta textbook-correta. Compra de
+opções: morta líquida de custos (BSIC +1,17% bruto → −9,07% líquido).
+
+REGRAS FIXADAS AGORA (decisão do utilizador: Fases A+B; C em roadmap):
+1. **AUTOPSIA DA PERDA (A2) é DESCRITIVA**: reconstruir picks top-3 walk-forward
+   e dissecar E[y|y<0] por decil de P, liquidez, preço, setor, VIX. Qualquer
+   filtro que dela nasça vai a TRIBUNAL v13 — nunca adoção direta. O rodapé do
+   brief ganha a aritmética Kelly com os números medidos (sizing honesto).
+2. **TRIBUNAL v12 (única mudança de modelo)**: braço A = 13 features v10
+   (re-baseline no painel com merge FINRA) vs braço B = 15 = v10 +
+   short_ratio_z5 + short_ratio_z20 (FINRA daily short volume, histórico
+   2018-08→hoje, PIT por construção — keyed na data do ficheiro T+0).
+   Gates 1/2/3 idênticos à v10. Duas corridas, adoção mecânica.
+3. **REGIME (contexto, zero peso)**: % dos últimos N=50 eventos do painel com
+   |y| > mediana móvel de 4 trimestres própria; limiares FIXOS: >0,50
+   comprador / <0,42 vendedor (baseline estrutural 58/42 documentado).
+   Variante implied-vs-realized do arquivo entra quando ≥50 eventos com implied.
+4. **TRIPWIRES (monitor mensal + aviso no brief)**, limiares fixos:
+   (a) descalibração: bucket n≥30 com realizado fora de [0,5×;2×] do previsto;
+   (b) lift morto: precision@3 p20 ≤ 1,0× a taxa-base; (c) espinha morta:
+   TOP-3 realizado ≤0 em 2 corridas mensais consecutivas; (d) cobertura
+   conformal fora de [0,75;0,85]. Tarefa mensal re-corre o tribunal em vigor.
+5. **CONTEXTO ATÉ VALIDAÇÃO PROSPETIVA** (sem histórico PIT grátis → sem
+   tribunal já): snapshots diários de estimativas (data/estimates/ — caminho
+   crítico do NLP/SUE futuro); EMI (Johnson-Kim-So: COV+INST+SG+ALT, média de
+   percentis, 64-88bps/mês documentados); bundle de opções do arquivo próprio
+   (iv_spread Cremers-Weinbaum, smirk Xing-Zhang-Zhao, implied_move_pctile,
+   otm_call_oi_d5 à Augustin — tribunal quando arquivo ≥1 trimestre); FINRA SI
+   bi-mensal + DTC (keyed na DATA DE PUBLICAÇÃO ~T+8du).
+6. **TESTE RN-P (B3, não-executante)**: P_RN(≥+20%) por call-spread K≈1,2×spot
+   do arquivo vs p_up20_cal; log diário acumulado; veredito mensal no monitor.
+   EXPECTATIVA PRÉ-REGISTADA: perder (prémios de variância inflacionam P_RN).
+7. **ERRATA**: shortPercentOfFloat (yfinance) é snapshot SEM DATA — look-ahead
+   silencioso em qualquer uso histórico; passa a contexto com aviso; FINRA é a
+   fonte datada. Nota: SR-FINRA-2026-012 (SI semanal T+5) com decisão SEC
+   ~2026-08-14 — se aprovada, o candidato FINRA sobe de valor.
+8. **ROADMAP FASE C (documentado, não implementado)**: Form 4 oportunista
+   (CMP 82bps/mês; janela 30-180d, NUNCA 2 semanas — Ke-Huddart-Petroni);
+   Lazy Prices (~7%/ano full-doc pré-decay; 188bps era só Risk Factors;
+   OOS 2015-2026 pré-registado antes de qualquer uso); NLP calls Koval
+   (repo morto; piso honesto 56-63% balanced acc; bloqueado pelo painel de
+   consenso → depende dos snapshots A1 maturarem). NO-GO permanentes:
+   Google Trends (PIT impossível), WSB como sinal (nível contrário −8,5%),
+   velocidade 8-K (sinal documentado com sinal errado).
+9. O QUE NÃO MUDA: painel (filtro |y|>1,0 fica para v13 — uma variável por
+   tribunal), features v10/v11, cabeça p20, gates, regra de seleção, Radar v11.
+
+### ADENDA v12 — resultados (por preencher: autopsia, tribunal FINRA, primeiro RN-P)
+
+---
+
 ### NOTA v10.2 — apresentação do brief (2026-08-05, pedido do utilizador)
 O brief passa a abrir com UM "Candidato nº 1 do dia" nomeado + 2 alternativas
 + bilhete de lotaria em linha única; todo o detalhe (tabelas EV, Radar, graus,
