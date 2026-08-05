@@ -20,9 +20,9 @@ for t in df.ticker:
             mom = float(c.iloc[-1]/c.iloc[-61]-1)
             d = c.diff(); g = d.clip(lower=0).rolling(14).mean(); l = (-d.clip(upper=0)).rolling(14).mean()
             rsi_clean = float((100-100/(1+g/l)).iloc[-1])
-        else:
-            rsi_clean = None
-    d52s.append(d52); moms.append(mom); rsis.append(rsi_clean if len(c) > 260 else None)
+    # v11: rsi_clean já é None fora do ramo >260 — o append condicional antigo
+    # referia `c` fora do binding (NameError no 1º ticker sem CSV; série stale depois)
+    d52s.append(d52); moms.append(mom); rsis.append(rsi_clean)
 df["dist_52w_high"], df["mom60"] = d52s, moms
 df["rsi14"] = rsis
 

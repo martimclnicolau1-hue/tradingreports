@@ -113,6 +113,8 @@ def build_panel():
             ev = events[k]
             if ev is None: continue
             if abs(ev["reaction"]) > 1.0:
+                # v11: logar cada descarte — evidência para rever o filtro na v12
+                print(f"[build_panel] descartado |y|>1: {sym} {ev['date']} y={ev['reaction']:+.2f}")
                 n_bad_y += 1; continue
             hist = [e for e in events[k+1:] if e is not None]
             if len(hist) < 4: continue

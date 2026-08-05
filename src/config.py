@@ -25,6 +25,8 @@ else:
 # ---------------------------------------------------------------------------
 AUTO_UNIVERSE = True          # v5: descobrir universo via calendário de mercado
 ENRICH_TOP_N = 100            # v6: opções só para o top-N do pré-score (custo, não critério)
+RECALL_MIN_UNIVERSE = 50      # v11: gate de recall (warn-only) — universo abaixo disto = suspeita
+RADAR_MIN_LOG_DVOL = 7.0      # v11: piso de liquidez do Radar (≈$10M/dia) — execução, não alfa
 ALWAYS_ENRICH = ["LLY", "SE", "DLO", "ONON", "INOD", "CELH", "APP", "ROKU"]
 MIN_MCAP = 500e6              # filtro de elegibilidade fixado na metodologia v5
 

@@ -26,7 +26,12 @@ def main():
     if getattr(config, "AUTO_UNIVERSE", False):
         auto_meta, coverage = universe.build_universe(config.WINDOW_START, config.WINDOW_END)
     if auto_meta:
-        tickers = sorted(set(auto_meta) | {ev["ticker"] for ev in config.MANUAL_EVENTS})
+        # v11: ALWAYS_ENRICH sempre re-verificado via yfinance (gate de recall v5)
+        tickers = sorted(set(auto_meta) | {ev["ticker"] for ev in config.MANUAL_EVENTS}
+                         | set(getattr(config, "ALWAYS_ENRICH", [])))
+        if len(auto_meta) < getattr(config, "RECALL_MIN_UNIVERSE", 50):
+            print(f"[AVISO RECALL] universo automático só tem {len(auto_meta)} tickers "
+                  f"(<{config.RECALL_MIN_UNIVERSE}) — possível falha de calendário; ver coverage.")
     else:
         tickers = list(config.UNIVERSE_FALLBACK)
         print("[AVISO] Todas as fontes de calendário falharam — a usar lista manual de fallback.")
@@ -104,6 +109,7 @@ def main():
             "surprise_momentum": surprises.get("surprise_momentum"),
             "beat_and_fell_rate": surprises.get("beat_and_fell_rate"),
             "expectations_0_1": decomp.get("expectations_0_1"),
+            "options_attempted": False,  # v11: distingue "tentado sem quote" de "nunca tentado"
             # contexto (fora do score)
             "wsb_comments": wsb_row.get("wsb_comments"),
         })
@@ -121,6 +127,7 @@ def main():
     for j, tkr in enumerate(sorted(enrich & set(by_tkr)), 1):
         r = by_tkr[tkr]
         implied, _ = fetch.fetch_implied_move(tkr)
+        r["options_attempted"] = True
         if not implied:
             continue
         c = ctx[tkr]

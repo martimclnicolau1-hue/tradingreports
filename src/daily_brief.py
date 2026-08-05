@@ -70,7 +70,8 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
     # pré-fecho: AMC de hoje + BMO de amanhã, prazo hoje; standard: T+1/T+2, prazo amanhã
     d_amc, d_bmo, dl = (T, t1, T) if TODAY_MODE else (t1, t2, t1)
     df = pd.read_csv(csv_path).dropna(subset=["event_date"])
-    df["_vetoed"] = df.get("veto_v3", pd.Series(dtype=str)).notna() & (df.get("veto_v3", "") != "")
+    # v11: seguro quando a coluna não existe (rescore ainda não corrido)
+    df["_vetoed"] = (df["veto_v3"].fillna("") != "") if "veto_v3" in df.columns else False
 
     opp = df[((df.event_date == d_amc.isoformat()) & (df.timing == "AMC")) |
              ((df.event_date == d_bmo.isoformat()) & (df.timing == "BMO"))].copy()

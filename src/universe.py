@@ -114,18 +114,20 @@ def build_universe(start, end):
     raw = []
     sources_ok = []
     day = start
-    nasdaq_alive = True
+    nasdaq_failed = []  # v11: uma falha num dia deixou de abortar a janela toda
     while day <= end:
-        if day.weekday() < 5 and nasdaq_alive:  # dias úteis
+        if day.weekday() < 5:  # dias úteis
             rows = fetch_calendar_nasdaq(day)
             if rows is None:
-                nasdaq_alive = False
+                nasdaq_failed.append(day.isoformat())
             else:
                 raw.extend(rows)
             time.sleep(config.REQUEST_SLEEP)
         day += timedelta(days=1)
-    if nasdaq_alive:
+    if not nasdaq_failed:
         sources_ok.append("nasdaq")
+    elif raw:
+        sources_ok.append(f"nasdaq(parcial — falhou: {', '.join(nasdaq_failed)})")
     for fn, name in [(fetch_calendar_apininjas, "apininjas"),
                      (fetch_calendar_earningsapi, "earningsapi")]:
         rows = fn(start, end)
@@ -159,6 +161,7 @@ def build_universe(start, end):
         "n_tickers": len(tickers),
         "n_filtered_mcap": n_filtered_mcap,
         "min_mcap": config.MIN_MCAP,
+        "nasdaq_failed_days": nasdaq_failed,
     }
     _save_cache(cache_name, {"tickers": tickers, "stats": stats})
     print(f"Universo automático: {len(tickers)} tickers elegíveis "
