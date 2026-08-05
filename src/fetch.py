@@ -44,9 +44,10 @@ def get_ticker(symbol):
     return yf.Ticker(symbol)
 
 
-def fetch_earnings_dates(symbol, limit=30):
-    """Datas de earnings passadas e futuras via yfinance. Devolve DataFrame ou None."""
-    cached = _load_cache(f"earnings_{symbol}.json")
+def fetch_earnings_dates(symbol, limit=100, force=False):
+    """Datas de earnings passadas e futuras via yfinance. Devolve DataFrame ou None.
+    v10: limit=100 (máximo yfinance; 30 bucketizava para 50); force ignora a cache."""
+    cached = None if force else _load_cache(f"earnings_{symbol}.json")
     if cached is not None:
         df = pd.DataFrame(cached)
         if not df.empty:
@@ -71,10 +72,12 @@ def fetch_earnings_dates(symbol, limit=30):
         return None, False
 
 
-def fetch_prices(symbol, period="3y"):
-    """Histórico diário OHLCV. Devolve (DataFrame, verified)."""
+def fetch_prices(symbol, period="10y", force=False):
+    """Histórico diário OHLCV. Devolve (DataFrame, verified).
+    v10: period=10y (o refresh reescreve o CSV — um default curto truncaria a
+    cache aprofundada a cada 24h); force ignora a cache."""
     path = _cache_path(f"prices_{symbol}.csv")
-    if os.path.exists(path):
+    if os.path.exists(path) and not force:
         age_h = (time.time() - os.path.getmtime(path)) / 3600
         if age_h < 24:
             df = pd.read_csv(path, index_col=0)
