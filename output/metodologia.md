@@ -563,7 +563,33 @@ REGRAS FIXADAS AGORA (decisão do utilizador: Fases A+B; C em roadmap):
 9. O QUE NÃO MUDA: painel (filtro |y|>1,0 fica para v13 — uma variável por
    tribunal), features v10/v11, cabeça p20, gates, regra de seleção, Radar v11.
 
-### ADENDA v12 — resultados (por preencher: autopsia, tribunal FINRA, primeiro RN-P)
+### ADENDA v12 — resultados parciais (2026-08-06, madrugada)
+1. **AUTOPSIA (studies/loss_autopsy.md, 30 folds, picks top-3 diários):** a
+   aritmética teórica da investigação (−4,96%/evento) estava DEMASIADO
+   pessimista — ignorava os 43% de picks que caem em [0; +20%). MEDIDO:
+   estratégia p20 = P(win)6,8% · E[win]+31,2% · P(y<0)49% · E[y|y<0]−8,58% ·
+   **EV +0,82%/pick**; espinha = P(y>0)50,7% · **EV +0,85%/pick**. MAS como
+   aposta binária na cauda o Kelly do moonshot é NEGATIVO (f*=−0,77) — o EV
+   vem do meio, não do bilhete. Candidato a filtro (excluir Q4 de vol
+   histórica) REJEITADO: só melhora a perda −8,58→−7,46 e corta 52% dos
+   moonshots capturados. Rodapé do brief ganhou a linha de sizing datada.
+2. **RN-P (1º dia, n=63 pares):** P_RN mediana 12,2% vs P_cal 6,8%;
+   P_cal>P_RN em apenas 16% — os prémios de variância inflacionam a cauda
+   implícita ~1,8×, exatamente como pré-registado. Comprar calls de earnings
+   = pagar quase o dobro da probabilidade física. Log acumula em
+   data/rnp_log.csv; veredito mensal no monitor.
+3. **Regime (1ª leitura, painel até 05/08):** VENDEDOR — 32% dos últimos 50
+   eventos acima do hábito próprio. Nota: mede |y| vs hábito do ticker;
+   a lente implied-vs-realized (ORATS dizia comprador) entra quando o
+   arquivo tiver ≥50 eventos com implied — as duas lentes ficam declaradas.
+4. **Live no brief:** EMI v1 (1002/1039 com ≥3 inputs; proxies declarados),
+   smirk (655 no 1º dia), FINRA SI bi-mensal (1030/1039, settlement
+   2026-07-15, via Query API particionada), tripwires TODOS VERDES na
+   corrida baseline. ΔOI ativa aos 6 snapshots de arquivo; pctile do
+   implied move aos 8.
+5. **Pendentes:** backfill FINRA diário (em curso) → rebuild do painel →
+   TRIBUNAL v12 (braços A/B); 1º snapshot de estimativas (em curso —
+   o painel PIT de consenso nasce hoje).
 
 ---
 
