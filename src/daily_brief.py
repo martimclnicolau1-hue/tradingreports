@@ -19,10 +19,10 @@ import pandas as pd
 
 from . import config
 
-# v10: aviso bicaudal do Radar — números medidos no estudo (studies/bigwinners.md);
-# constante datada, refrescada apenas em re-estudo.
-RADAR_TAIL = ("o mesmo perfil que produz subidas ≥+20% produz também quedas ≤−20% "
-              "(rácio medido no estudo v10 — ver studies/bigwinners.md). "
+# v10: aviso bicaudal do Radar — números medidos no estudo de 2026-08-05
+# (studies/bigwinners.md, 22.086 eventos); constante datada, refrescada só em re-estudo.
+RADAR_TAIL = ("no perfil que produz P(≥+20%)=10,0%, a queda ≥20% acontece 5,9% das "
+              "vezes — mais de metade do tamanho (estudo 2026-08-05, n=22.086). "
               "Volatilidade não é direção.")
 
 

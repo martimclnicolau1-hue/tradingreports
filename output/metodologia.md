@@ -382,6 +382,29 @@ antecede o commit de qualquer resultado (prova de data). REGRAS FIXADAS AGORA:
     histórico de opções (arquivo tem dias), fundamentais PIT, deslistados,
     otimização de limiares.
 
-### ADENDA v10-estudo — resultados (por datar após correr)
+### ADENDA v10-estudo — resultados (2026-08-05)
+Painel reconstruído: 25.875 eventos, 1.026 tickers, 2017-10→2026-08 (4,2× o
+painel v9). Janela 7 anos: 22.086 eventos, 712 moonshots (P=3,22%), cauda
+negativa 2,35% (SUBESTIMADA — sobrevivência). Achados (studies/bigwinners.md):
+1. prior_avg_move domina: Q4 8,3% vs Q1 0,3% de moonshots (28×) — mas a cauda
+   negativa acompanha (5,8% no Q4). Volatilidade compra as DUAS caudas.
+2. log_close funciona como pré-registado (lottery): Q1 barato 5,3%/2,7% (rácio
+   ~2) vs Q4 caro 1,9%/1,9% (rácio 1). A ASSIMETRIA vive nos baratos.
+3. Canto lotaria (vol Q4 × preço Q1): 11,5% up vs 5,5% down (n=1.699).
+   Perfil-lotaria pré-declarado: 10,0% up / 5,9% down, rácio 1,69; média
+   +1,54%/evento bruto SEM custos (declarado; não é estratégia).
+4. Repeat offenders: ≥1 big-up nos 8 prévios → 9,11% vs 2,19% sem (4,2×) —
+   valida prior_up_big_rate como feature; top-10% dos tickers = 25% dos
+   moonshots (CVNA 8, ARLO 7, PLTR/APP/GRPN/VISN/BW 6…).
+5. Mecanismo (ex-post): 82% dos moonshots tiveram beat; 66% beat >15% —
+   consistente com o sandbagging como pipeline causal.
+6. Surpresas do painel longo: mom60 vira NEGATIVO significativo (t=-2,75) a
+   10 anos (era +1,3 no painel curto — reversão, não momentum);
+   dist_52w_high perde o sinal (t=-0,1); VIX>25 REDUZ moonshots (2,4% vs
+   3,6% em VIX<15 — em pânico o movimento é de mercado, não idiossincrático).
+7. Setor (contexto): Tech 4,9% / Industrials e Comm 4,3% vs Financeiras 1,6%,
+   Energia 0,6%, REITs 0,3% — gradiente 16×.
+8. Taxa por ano sobe 2019→2026 (1,8%→4,6%) — mistura de regime real e
+   sobrevivência (nomes recentes ainda listados); declarado.
 
 ### ADENDA v10-tribunal — resultados e decisão (por datar após correr)
