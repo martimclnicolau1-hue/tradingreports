@@ -21,6 +21,7 @@ from .factor_study import vix_on
 FEATS = ev_engine.FEATURES + ["vix", "dow", "is_amc", "n_events_same_day"]
 # v10 braço B: − log_mcap (look-ahead agrava a 10 anos) + nível de preço + liquidez $ PIT
 FEATS_V10 = [f for f in FEATS if f != "log_mcap"] + ["log_close", "log_dollar_vol"]
+FEATS = FEATS_V10  # ADOTADO — tribunal v10 2026-08-05, gates 1∧2∧3 (ver metodologia)
 GBM_PARAMS = dict(max_iter=300, learning_rate=0.05, max_depth=4,
                   l2_regularization=1.0, random_state=42)
 N_FOLDS = 30

@@ -407,4 +407,27 @@ negativa 2,35% (SUBESTIMADA — sobrevivência). Achados (studies/bigwinners.md)
 8. Taxa por ano sobe 2019→2026 (1,8%→4,6%) — mistura de regime real e
    sobrevivência (nomes recentes ainda listados); declarado.
 
-### ADENDA v10-tribunal — resultados e decisão (por datar após correr)
+### ADENDA v10-tribunal — resultados e decisão (2026-08-05)
+Painel 25.875 eventos, 30 folds ancorados, braços exatamente como pré-registado:
+- **Braço A (12 features v9) COLAPSA no painel longo**: TOP-1 −3,01%±2,38 |
+  TOP-3 +0,40%±1,62. O motor v9 era em parte artefacto do painel curto e do
+  log_mcap com look-ahead — o re-baseline pré-registado apanhou-o.
+- **Braço B (13 = v9 − log_mcap + log_close + log_dollar_vol)**: TOP-1
+  +4,97%±3,74 | **TOP-3 +3,97%±1,60** | Spearman t=2,02 | cobertura 0,793.
+- Gate 1 (emparelhado): diff +3,571pp vs SE 2,116pp → PASSA → features B.
+- Gate 2: captura p20 0,2911 > baseline p5 0,2781 E precision@3 diária 6,94%
+  com Wilson-lo95 6,11% > base 3,05% (o dobro da base, estatisticamente
+  limpo) → PASSA.
+- Gate 3: 4 buckets n≥30 todos dentro de [0,5×;2×] — e CONSERVADORES
+  (0,7→0,7; 3,3→4,1; 6,7→8,8; 11,8→14,3) → PASSA.
+- **DECISÃO (aplicação mecânica): FEATS=FEATS_V10 adotado + cabeça p_up20_cal
+  + Radar no brief.** gbm_validation.json passa a ser o do braço B (o brief
+  audita o modelo em produção). Buckets p20 com n<30 (0,15-0,30: 23+19+5
+  eventos) continuam instáveis — cobertos pelo aviso small-n do brief.
+- p5 no painel longo: bucket 0,5-0,6 com n=33 previsto 53%→realizado 49%;
+  abstenção a 0,65 continua sem sinais (1 evento em 25,6k) — limiar mantido.
+- **EV kNN (v7) no painel longo: quintil topo bate fundo >2 SE (n=25.575)**
+  — pela regra pré-registada da v7, o rótulo "ordenação heurística, edge não
+  provado" é SUBSTITUÍDO pelo veredito novo do ev_validation.json. Quatro
+  vezes mais dados encontraram o spread que 5,9k eventos não conseguiam
+  distinguir de ruído.
