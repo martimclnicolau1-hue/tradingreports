@@ -189,7 +189,7 @@ def score_candidates(csv_path="output/candidatos.csv"):
     return df
 
 
-def walk_forward_validation(panel, k=K):
+def walk_forward_validation(panel, k=K, save=True):
     p = panel.sort_values("event_date").reset_index(drop=True)
     y_all = p["y"].values
     evs, ys = [], []
@@ -223,8 +223,9 @@ def walk_forward_validation(panel, k=K):
            "verdict": ("EV valida: quintil topo bate fundo (>2 SE)" if diff > 2*se
                        else ("ALERTA: spread NEGATIVO significativo — não publicar EV" if diff < -2*se
                              else "ordenação heurística, edge não provado (spread indistinguível de ruído)"))}
-    with open("output/ev_validation.json", "w") as f:
-        json.dump(res, f, indent=1)
+    if save:  # o selftest sintético NUNCA pode reescrever a validação de produção
+        with open("output/ev_validation.json", "w") as f:
+            json.dump(res, f, indent=1)
     return res
 
 
@@ -237,7 +238,7 @@ def selftest():
     panel["dist_52w_high"] = f0
     panel["y"] = np.where(f0 > 0, 0.1, -0.1) + rng.normal(0, 0.02, n)
     panel["event_date"] = [f"2020-{1+i%12:02d}-{1+i%28:02d}" for i in range(n)]
-    res = walk_forward_validation(panel)
+    res = walk_forward_validation(panel, save=False)
     assert res["spread_q5_q1"] > 0.05 and res["passes_2se"], f"selftest FALHOU: {res}"
     print(f"selftest OK: spread={res['spread_q5_q1']:.3f}, 2SE={res['passes_2se']}")
 

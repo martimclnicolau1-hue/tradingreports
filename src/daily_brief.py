@@ -201,12 +201,13 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
               f"{int(m['time_et'][:2])+5}:{m['time_et'][3:]} de Lisboa ({m['source']})")
 
     a("\n---")
-    a("*Este brief é informação, não recomendação de compra ou venda. O edge global "
-      "desta abordagem, medido sem lookahead, é estatisticamente indistinguível de zero; "
-      "os graus medem a qualidade do setup, não a probabilidade de lucro. As quotes de "
-      "opções são do fecho — reconfirma no próprio dia. Stops não protegem através de "
-      "gaps; o tamanho da posição é o único controlo real. O EV vem de analogs históricos "
-      "com IC largo e validação que o classifica como heurística. Decisões são tuas.*")
+    a("*Este brief é informação, não recomendação de compra ou venda. Cada secção cita "
+      "o seu próprio veredito de validação sem lookahead — o que não estiver marcado "
+      "como validado é indistinguível de ruído; os graus medem a qualidade do setup, "
+      "não a probabilidade de lucro. As quotes de opções são do fecho — reconfirma no "
+      "próprio dia. Stops não protegem através de gaps; o tamanho da posição é o único "
+      "controlo real. O EV vem de analogs históricos com IC largo (veredito citado na "
+      "própria secção). Decisões são tuas.*")
 
     md = "\n".join(L)
     md_path = f"output/brief_{T.isoformat()}.md"

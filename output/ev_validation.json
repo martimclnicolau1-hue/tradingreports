@@ -1,16 +1,17 @@
 {
- "n_scored": 1700,
+ "n_scored": 25575,
  "quintile_means": [
-  -0.10031148829679298,
-  -0.09672893145317477,
-  -0.012040890763567928,
-  0.09100678045036092,
-  0.0990598543072668
+  0.0024,
+  0.0005,
+  0.0048,
+  0.005,
+  0.0082
  ],
- "spread_q5_q1": 0.19937134260405978,
- "se": 0.001492705700732608,
+ "spread_q5_q1": 0.0058,
+ "se": null,
  "passes_2se": true,
- "spearman": 0.715,
- "spearman_t": 42.15,
- "verdict": "EV valida: quintil topo bate fundo (>2 SE)"
+ "spearman": 0.0184,
+ "spearman_t": 2.95,
+ "verdict": "EV valida: quintil topo bate fundo (>2 SE)",
+ "nota": "restaurado do log ev_full_validation.log de 2026-08-05 (o selftest tinha reescrito este ficheiro \u2014 bug corrigido); se exato n\u00e3o registado no log"
 }
