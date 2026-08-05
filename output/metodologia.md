@@ -432,6 +432,66 @@ Painel 25.875 eventos, 30 folds ancorados, braços exatamente como pré-registad
   vezes mais dados encontraram o spread que 5,9k eventos não conseguiam
   distinguir de ruído.
 
+## REVISÃO v11 — 2026-08-05, registada ANTES de qualquer alteração de código
+
+Pedido do utilizador: pipeline UNIFICADO — um candidato claro, menos dispersão,
+e visibilidade dos nomes tipo PLTR que sobem ≥20% no dia do report. Diagnóstico
+(2 investigações, dados de 2026-08-05):
+- PLTR-class = JANELA, não veto: PLTR reporta 02/11 (89 dias); CVNA/HOOD/RDDT/
+  COIN reportaram em finais de julho, antes de o sistema existir. Sistema é de
+  curto prazo (janela 7d) — certo em não os mostrar, errado em não dizer quando voltam.
+- Vetos anti-selecionam moonshots: 56,4% dos candidatos vetados (Altman=72%);
+  9 dos 10 maiores p_up20_cal globais VETADOS; 8/15 fábricas de moonshots
+  presentes vetadas; taxa moonshot 3,45% vetados vs 2,62% elegíveis, MAS
+  mediana −0,24% vs +0,60% — o veto compra mediana e paga cauda. CAVEAT
+  DECLARADO: fundamentais DE HOJE sobre eventos passados (look-ahead; não há
+  PIT grátis) — direção robusta, magnitudes moles. Vetos NÃO são backtestáveis;
+  o que se segue sobre eles é DECISÃO DE DESENHO, não resultado empírico.
+- Dispersão estrutural: 6 rankings rivais; score em 2 escalas na mesma coluna;
+  grau A preso ao top-100 com opções (contradiz "custo, não critério" v6§1);
+  timing "?" invisível; 5 bugs latentes.
+
+REGRAS FIXADAS AGORA (decisões do utilizador: flags sem excluir · piso $10M ·
+graus abolidos):
+1. **ESPINHA ÚNICA**: gbm_ev + p_up20_cal são o único ranking exibido. score v2
+   = pré-ranking interno de enriquecimento (escala mista pré/pós-opções
+   DECLARADA; nunca exibido); score_v3/v4 ficam no CSV como contexto; ev_knn
+   mantém-se no ANEXO (robustez independente, validação própria >2SE).
+   **GRAUS A/B/C ABOLIDOS** — eram etiquetas de disponibilidade de dados, não
+   de qualidade → a informação vira flags por linha.
+2. **VETOS → FLAGS, objetivo-casados**: a CABEÇA (candidato nº1 + alternativas)
+   continua a exigir zero flags (regra de seleção v8§5 INALTERADA); o RADAR
+   deixa de excluir por veto e mostra 🚩 SEMPRE; a tabela EV do anexo mantém a
+   regra v7 (vetado fora — o EV é média, e o veto compra mediana). Flags são
+   risco forense visível, não proibição.
+3. **PISO DE LIQUIDEZ DO RADAR**: log_dollar_vol ≥ 7,0 (≈$10M/dia, feature PIT
+   v10). DECLARADO: custa taxa-base (3,70% abaixo vs 2,97% acima — moonshots
+   vivem nos pequenos); aceite porque picks intransacionáveis não servem o
+   objetivo. Excluídos pelo piso são LISTADOS, nunca silenciosos. Valor fixo.
+4. **ÂMBITO**: timing "?" entra no braço AMC do dia (prazo mais cedo = nunca
+   atrasado) com flag "timing n/conf."; date_verified=False vira aviso na
+   própria linha do pick (deixa de rebaixar grau — os graus morreram).
+5. **FÁBRICAS DE MOONSHOTS**: secção nova — contagem y≥+0,20 desde 2019-08 no
+   painel (sobrevivência declarada) × próxima data de report da cache yfinance
+   (idade da cache >7d mostrada; confirmar no IR). Responde no produto a
+   "porque não está a PLTR": janela=7d; PLTR (6×) reporta 02/11.
+6. **ENRIQUECIMENTO**: top-100 ∪ eventos ≤ T+2 (âmbito exibível) ∪ ALWAYS_ENRICH
+   ∪ posições, cap 300 com aviso; optclean ganha carimbo asof (refresh diário só
+   do âmbito); options_attempted distingue "tentado sem quote" de "nunca tentado".
+7. **CORREÇÕES (bugs, não método)**: rescore_v3 `c` fora do binding; brief sem
+   coluna veto_v3 partia; universo Nasdaq abortava a janela toda à 1ª exceção
+   (passa a continuar-por-dia com dias falhados publicados); gate de recall v5
+   finalmente implementado (warn-only; ALWAYS_ENRICH re-verificado).
+8. **O QUE NÃO MUDA (e porquê não há tribunal)**: painel, features B, GBM,
+   cabeça p20, gates v10, regra de seleção da cabeça — INTACTOS; nenhum modelo
+   re-treinado ⇒ sem braços A/B. O filtro |y|>1,0 do painel (descarta movers
+   reais >100%) ADIA para v12 — mudá-lo reconstrói o painel e exige
+   re-tribunal; a partir de agora cada descarte é logado (ticker/data/y).
+
+### ADENDA v11 — verificação pós-implementação (por preencher)
+
+---
+
 ### NOTA v10.2 — apresentação do brief (2026-08-05, pedido do utilizador)
 O brief passa a abrir com UM "Candidato nº 1 do dia" nomeado + 2 alternativas
 + bilhete de lotaria em linha única; todo o detalhe (tabelas EV, Radar, graus,
