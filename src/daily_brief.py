@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 """v6: brief diário de oportunidades (enviado às 21:45 de Lisboa).
 
-Âmbito do brief gerado no dia T:
+Âmbito do brief gerado no dia T (modo standard, pós-fecho às 21:45):
 - Eventos AMC de T+1 (prazo de entrada: T+1 às 21:00 de Lisboa)
 - Eventos BMO de T+2 (prazo: T+1 às 21:00)
 - Eventos BMO de T+1 aparecem só como "amanhã de manhã" (prazo já passou)
+
+Modo PRÉ-FECHO (EVENTCAL_TODAY=1, gerado ANTES das 21:00 de Lisboa):
+- Eventos AMC de HOJE + BMO de amanhã — prazo de entrada HOJE às 21:00.
+  (É a janela acionável de quem lê com o mercado ainda aberto.)
 
 Graus (regra fixa, metodologia v6): A = sem vetos + data verificada + dois
 estimadores concordam <1,5× + edge conservador ≥1,0 + beat&fell <50%;
@@ -13,11 +17,14 @@ B = sem vetos + data verificada, estimador único ou edge 0,8–1,0; C = vigia.
 O brief é INFORMATIVO: graus e prazos, sem diretivas de compra/venda.
 Uso: .venv/bin/python -m src.daily_brief  → output/brief_YYYY-MM-DD.{md,html}
 """
-from datetime import date, timedelta
+import os
+from datetime import date, datetime, timedelta
 
 import pandas as pd
 
 from . import config
+
+TODAY_MODE = os.environ.get("EVENTCAL_TODAY") == "1"
 
 # v10: aviso bicaudal do Radar — números medidos no estudo de 2026-08-05
 # (studies/bigwinners.md, 22.086 eventos); constante datada, refrescada só em re-estudo.
@@ -60,12 +67,15 @@ HEADER_MD = "| Ticker | Timing | Score | Edge (str/clean) | Sandbag | vs Máx52s
 def build_brief(today=None, csv_path="output/candidatos.csv"):
     T = today or date.today()
     t1, t2 = T + timedelta(days=1), T + timedelta(days=2)
+    # pré-fecho: AMC de hoje + BMO de amanhã, prazo hoje; standard: T+1/T+2, prazo amanhã
+    d_amc, d_bmo, dl = (T, t1, T) if TODAY_MODE else (t1, t2, t1)
     df = pd.read_csv(csv_path).dropna(subset=["event_date"])
     df["_vetoed"] = df.get("veto_v3", pd.Series(dtype=str)).notna() & (df.get("veto_v3", "") != "")
 
-    opp = df[((df.event_date == t1.isoformat()) & (df.timing == "AMC")) |
-             ((df.event_date == t2.isoformat()) & (df.timing == "BMO"))].copy()
-    morning_info = df[(df.event_date == t1.isoformat()) & (df.timing == "BMO")]
+    opp = df[((df.event_date == d_amc.isoformat()) & (df.timing == "AMC")) |
+             ((df.event_date == d_bmo.isoformat()) & (df.timing == "BMO"))].copy()
+    morning_info = df.iloc[0:0] if TODAY_MODE else \
+        df[(df.event_date == t1.isoformat()) & (df.timing == "BMO")]
 
     el = opp[~opp._vetoed].copy()
     el["grade"] = el.apply(_grade, axis=1)
@@ -74,14 +84,16 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
 
     L = []
     a = L.append
-    a(f"# Brief earnings — oportunidades com prazo {t1.strftime('%d/%m')} às 21:00 de Lisboa")
-    a(f"\n*Gerado {T.isoformat()} ~21:45. Cobre: eventos após o fecho de {t1.strftime('%d/%m')} "
-      f"e antes da abertura de {t2.strftime('%d/%m')}. Prazo único de decisão: "
-      f"**{t1.strftime('%d/%m')} às 21:00 de Lisboa**.*")
+    a(f"# Brief earnings — oportunidades com prazo {dl.strftime('%d/%m')} às 21:00 de Lisboa")
+    hoje_tag = " (MODO PRÉ-FECHO: o prazo é HOJE — mercado ainda aberto)" if TODAY_MODE else ""
+    a(f"\n*Gerado {T.isoformat()} às {datetime.now().strftime('%H:%M')} de Lisboa{hoje_tag}. "
+      f"Cobre: eventos após o fecho de {d_amc.strftime('%d/%m')} "
+      f"e antes da abertura de {d_bmo.strftime('%d/%m')}. Prazo único de decisão: "
+      f"**{dl.strftime('%d/%m')} às 21:00 de Lisboa**.*")
 
     # posições do utilizador com evento próximo
     pos_events = df[df.ticker.isin(config.EXISTING_POSITIONS) &
-                    df.event_date.isin([t1.isoformat(), t2.isoformat()])]
+                    df.event_date.isin([d_amc.isoformat(), d_bmo.isoformat()])]
     if not pos_events.empty:
         a("\n## ⚠ As tuas posições com evento nesta janela")
         for _, r in pos_events.iterrows():
@@ -193,7 +205,7 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
         for _, r in vet.sort_values("score", ascending=False).head(8).iterrows():
             a(f"- {r.ticker}: {r.veto_v3}")
 
-    macro = [m for m in config.MACRO_EVENTS if m["date"] in (t1, t2)]
+    macro = [m for m in config.MACRO_EVENTS if m["date"] in (d_amc, d_bmo)]
     if macro:
         a("\n## Macro na janela")
         for m in macro:
