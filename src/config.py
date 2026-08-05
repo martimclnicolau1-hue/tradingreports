@@ -64,6 +64,7 @@ UNIVERSE_FALLBACK = [
 EXISTING_POSITIONS = {
     "LLY": "posição de €1.000 declarada pelo utilizador a 2026-08-04",
     "AXON": "posição antiga declarada — estado atual por confirmar pelo utilizador",
+    "GCT": "posição de €1.000 declarada pelo utilizador a 2026-08-05 (report 06/08 BMO)",
 }
 
 # ---------------------------------------------------------------------------
