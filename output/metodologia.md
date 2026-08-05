@@ -488,7 +488,23 @@ graus abolidos):
    reais >100%) ADIA para v12 — mudá-lo reconstrói o painel e exige
    re-tribunal; a partir de agora cada descarte é logado (ticker/data/y).
 
-### ADENDA v11 — verificação pós-implementação (por preencher)
+### ADENDA v11 — verificação pós-implementação (2026-08-05, ~23:15)
+- Radar reformado A FUNCIONAR: top-5 do dia = AGL/PAYO/GENI/FSLY/TDAY (todos
+  ~12% p20, todos $13-111M/dia, todos com 🚩 visível — TODOS estavam escondidos
+  por vetos no regime anterior). Excluídos pelo piso LISTADOS (TDUP 13%/$8M,
+  ARHS, CPS). Bilhete de lotaria: AGL 🚩Altman (antes: micro-cap CTKB ilíquida).
+- Fábricas: APP (6×) e TDUP (5×) reportavam HOJE; ARLO/VISN/GRPN amanhã;
+  CVNA 28/10; PLTR 02/11 — a pergunta "porquê não PLTR" respondida no produto.
+- Graus abolidos: grep "GRAU" no brief = 0; contagens novas no print final
+  (âmbito 430 · sem flags 194 · radar 327 · flags 236).
+- Crash-path testado: brief gera sem coluna veto_v3 (degrada para zero flags).
+- rescore_v3 corre sem NameError; gbm --score persiste log_dollar_vol (8 cols).
+- Colisão de nome descoberta na implementação: coluna "flags" choca com a
+  property DataFrame.flags do pandas → renomeada veto_flags (bug de 1ª ordem
+  que o teste apanhou antes de qualquer envio).
+- Nota honesta: com flags visíveis, o topo do Radar do próprio dia mudou de
+  micro-caps limpas para nomes líquidos em distress (Altman) — é exatamente o
+  trade-off pré-registado: risco forense à vista em vez de escondido.
 
 ---
 

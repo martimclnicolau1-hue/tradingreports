@@ -1,22 +1,26 @@
 # -*- coding: utf-8 -*-
-"""v6: brief diário de oportunidades (enviado às 21:45 de Lisboa).
+"""v6→v11: brief diário de oportunidades (enviado às 21:45 de Lisboa).
 
 Âmbito do brief gerado no dia T (modo standard, pós-fecho às 21:45):
 - Eventos AMC de T+1 (prazo de entrada: T+1 às 21:00 de Lisboa)
 - Eventos BMO de T+2 (prazo: T+1 às 21:00)
-- Eventos BMO de T+1 aparecem só como "amanhã de manhã" (prazo já passou)
 
 Modo PRÉ-FECHO (EVENTCAL_TODAY=1, gerado ANTES das 21:00 de Lisboa):
 - Eventos AMC de HOJE + BMO de amanhã — prazo de entrada HOJE às 21:00.
-  (É a janela acionável de quem lê com o mercado ainda aberto.)
 
-Graus (regra fixa, metodologia v6): A = sem vetos + data verificada + dois
-estimadores concordam <1,5× + edge conservador ≥1,0 + beat&fell <50%;
-B = sem vetos + data verificada, estimador único ou edge 0,8–1,0; C = vigia.
+Regime v11 (metodologia v11, pré-registada 2026-08-05):
+- Espinha única: gbm_ev (cabeça) + p_up20_cal (Radar). Graus A/B/C abolidos.
+- CABEÇA exige zero flags forenses (regra v8§5 intacta).
+- RADAR mostra 🚩flags sem excluir + piso de liquidez RADAR_MIN_LOG_DVOL
+  (excluídos pelo piso são listados, nunca silenciosos).
+- Tabela EV do anexo mantém a regra v7 (vetado fora — o EV é média).
+- Secção "Fábricas de moonshots" — próximos reports dos maiores produtores
+  históricos de y≥+20% (responde a "porque não está a PLTR": janela de 7d).
 
-O brief é INFORMATIVO: graus e prazos, sem diretivas de compra/venda.
+O brief é INFORMATIVO: probabilidades calibradas e prazos, sem diretivas.
 Uso: .venv/bin/python -m src.daily_brief  → output/brief_YYYY-MM-DD.{md,html}
 """
+import json
 import os
 from datetime import date, datetime, timedelta
 
@@ -33,35 +37,49 @@ RADAR_TAIL = ("no perfil que produz P(≥+20%)=10,0%, a queda ≥20% acontece 5,
               "Volatilidade não é direção.")
 
 
-def _grade(r):
-    a, b = r.get("edge_ratio"), r.get("edge_ratio_clean")
-    have_a, have_b = pd.notna(a), pd.notna(b)
-    agree = have_a and have_b and min(a, b) > 0 and max(a, b) / min(a, b) < 1.5
-    emin = min([x for x in (a, b) if pd.notna(x)], default=None)
-    bf = r.get("beat_and_fell_rate")
-    if (agree and emin is not None and emin >= 1.0
-            and (pd.isna(bf) or bf < 0.5) and r.get("date_verified")):
-        return "A"
-    if r.get("date_verified") and emin is not None and emin >= 0.8:
-        return "B"
-    return "C"
-
-
 def _fmt(x, pct=False, nd=1):
     if x is None or (isinstance(x, float) and pd.isna(x)):
         return "—"
     return f"{100*x:.{nd}f}%" if pct else f"{x}"
 
 
-def _row_md(r):
-    return (f"| {r['ticker']} | {r.get('timing','?')} | {_fmt(r.get('score_v4') or r.get('score'))} "
-            f"| {_fmt(r.get('edge_ratio'))}/{_fmt(r.get('edge_ratio_clean'))} "
-            f"| {_fmt(round(r.get('sandbag_surprise_4q'),0) if pd.notna(r.get('sandbag_surprise_4q')) else None)} | {_fmt(r.get('dist_52w_high'), pct=True, nd=0)} "
-            f"| {_fmt(r.get('beat_and_fell_rate'), pct=True, nd=0)} "
-            f"| {_fmt(r.get('avg_abs_move'), pct=True)} |")
+def _dvol_str(ldv):
+    """log10($ vol/dia) → string legível ($3M, $120M…)."""
+    if ldv is None or pd.isna(ldv):
+        return "—"
+    v = 10 ** float(ldv)
+    return f"${v/1e9:.1f}B" if v >= 1e9 else (f"${v/1e6:.0f}M" if v >= 1e6 else f"${v/1e3:.0f}k")
 
 
-HEADER_MD = "| Ticker | Timing | Score | Edge (str/clean) | Sandbag | vs Máx52s | Beat&Fell | Mov. hist. |\n|---|---|---|---|---|---|---|---|"
+def _factories(top_n=8):
+    """v11: maiores produtores de y≥+20% (painel, desde 2019-08) × próximo report
+    na cache yfinance. Sobrevivência declarada; idade da cache mostrada se >7d."""
+    try:
+        pan = pd.read_csv("output/factor_panel.csv", usecols=["ticker", "event_date", "y"])
+    except Exception:
+        return []
+    vc = pan[(pan.event_date >= "2019-08-01") & (pan.y >= 0.20)].ticker.value_counts()
+    hoje = pd.Timestamp.today().normalize()
+    out = []
+    for t, c in vc.head(30).items():
+        p = f"data/earnings_{t}.json"
+        if not os.path.exists(p):
+            continue
+        try:
+            j = json.load(open(p))
+            fut = sorted(pd.Timestamp(r["date"]).tz_localize(None).normalize()
+                         for r in j["data"]
+                         if pd.Timestamp(r["date"]).tz_localize(None) >= hoje)
+            if not fut:
+                continue
+            idade = (pd.Timestamp.utcnow().tz_localize(None)
+                     - pd.Timestamp(j["fetched_at"]).tz_localize(None)).days
+            out.append((t, int(c), fut[0].date(), idade))
+        except Exception:
+            continue
+        if len(out) >= top_n:
+            break
+    return sorted(out, key=lambda x: x[2])
 
 
 def build_brief(today=None, csv_path="output/candidatos.csv"):
@@ -70,18 +88,25 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
     # pré-fecho: AMC de hoje + BMO de amanhã, prazo hoje; standard: T+1/T+2, prazo amanhã
     d_amc, d_bmo, dl = (T, t1, T) if TODAY_MODE else (t1, t2, t1)
     df = pd.read_csv(csv_path).dropna(subset=["event_date"])
-    # v11: seguro quando a coluna não existe (rescore ainda não corrido)
-    df["_vetoed"] = (df["veto_v3"].fillna("") != "") if "veto_v3" in df.columns else False
+    df["veto_flags"] = df["veto_v3"].fillna("") if "veto_v3" in df.columns else ""
 
-    opp = df[((df.event_date == d_amc.isoformat()) & (df.timing == "AMC")) |
+    # v11: timing "?" entra no braço AMC (prazo mais cedo = nunca atrasado), com flag
+    opp = df[((df.event_date == d_amc.isoformat()) & (df.timing.isin(["AMC", "?"]))) |
              ((df.event_date == d_bmo.isoformat()) & (df.timing == "BMO"))].copy()
     morning_info = df.iloc[0:0] if TODAY_MODE else \
         df[(df.event_date == t1.isoformat()) & (df.timing == "BMO")]
 
-    el = opp[~opp._vetoed].copy()
-    el["grade"] = el.apply(_grade, axis=1)
-    el = el.sort_values(["grade", "score_v4" if "score_v4" in el else "score"],
-                        ascending=[True, False])
+    el = opp[opp["veto_flags"] == ""].copy()   # cabeça + tabela EV: zero flags (regra intacta)
+    has_p20 = "p_up20_cal" in opp.columns
+    has_ldv = "log_dollar_vol" in opp.columns
+    floor = getattr(config, "RADAR_MIN_LOG_DVOL", 7.0)
+    if has_p20:
+        pool_all = opp[opp.p_up20_cal.notna()]
+        radar_pool = pool_all[pool_all.log_dollar_vol >= floor] if has_ldv else pool_all
+        radar_out = (pool_all[pool_all.log_dollar_vol < floor] if has_ldv
+                     else pool_all.iloc[0:0]).nlargest(3, "p_up20_cal")
+    else:
+        radar_pool = radar_out = opp.iloc[0:0]
 
     L = []
     a = L.append
@@ -102,19 +127,18 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
               f"{pd.Timestamp(r.event_date).strftime('%d/%m')} {r.timing}")
 
     if not morning_info.empty:
-        names = ", ".join(morning_info.sort_values("score", ascending=False).ticker.head(8))
+        srt = "gbm_ev" if "gbm_ev" in morning_info.columns else "score"
+        names = ", ".join(morning_info.sort_values(srt, ascending=False).ticker.head(8))
         a(f"\n*Amanhã de manhã (prazo já encerrado): {names}*")
 
-    # v10.2: UM candidato à cabeça + 2 alternativas; regra de seleção INALTERADA
-    # (topo do gbm_ev entre elegíveis — a mesma ordenação pré-registada desde a v8);
-    # o resto do detalhe desce para o ANEXO. Mudança de apresentação, não de método.
-    import json as _json, os as _os
+    # CABEÇA: UM candidato + 2 alternativas (regra de seleção v8§5 intacta:
+    # topo do gbm_ev entre elegíveis com zero flags)
     val = {}
-    if _os.path.exists("output/gbm_validation.json"):
-        val = _json.load(open("output/gbm_validation.json"))
+    if os.path.exists("output/gbm_validation.json"):
+        val = json.load(open("output/gbm_validation.json"))
     gates = {}
-    if _os.path.exists("output/gates_v10.json"):
-        gates = _json.load(open("output/gates_v10.json"))
+    if os.path.exists("output/gates_v10.json"):
+        gates = json.load(open("output/gates_v10.json"))
     if "p_up5_cal" in el.columns and el.p_up5_cal.notna().any() and val:
         cand = el[el.p_up5_cal.notna()].sort_values("gbm_ev", ascending=False)
         pick = cand.iloc[0] if len(cand) else None
@@ -138,48 +162,74 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
             a(f"P(subir ≥+5%) calibrada: **{100*pick.p_up5_cal:.0f}%**{audit}. "
               f"EV do modelo: {100*pick.gbm_ev:+.1f}% | intervalo conformal 80%: "
               f"[{100*pick.gbm_q10:+.1f}%; {100*pick.gbm_q90:+.1f}%].")
+            avisos = []
+            if not pick.get("date_verified"):
+                avisos.append("⚠ data do evento não confirmada por 2ª fonte")
+            if pick.get("timing") == "?":
+                avisos.append("⚠ timing (AMC/BMO) não confirmado")
+            if avisos:
+                a("*" + " · ".join(avisos) + "*")
             if not selo:
-                a(f"*Nº 1 pela regra pré-registada (maior EV entre não-vetados) — não é garantia: "
-                  f"o selo exige P(≥+5%) calibrada ≥{100*limiar:.0f}%, que nunca ocorreu em 25,6k eventos "
-                  f"históricos. Confiança calibrada = frequência verificada, e {100*pick.p_up5_cal:.0f}% "
-                  f"também significa ~{100*(1-pick.p_up5_cal):.0f}% de NÃO subir 5%.*")
+                a(f"*Nº 1 pela regra pré-registada (maior EV entre candidatos sem flags) — não é "
+                  f"garantia: o selo exige P(≥+5%) calibrada ≥{100*limiar:.0f}%, que nunca ocorreu "
+                  f"em 25,6k eventos históricos. {100*pick.p_up5_cal:.0f}% também significa "
+                  f"~{100*(1-pick.p_up5_cal):.0f}% de NÃO subir 5%.*")
             for i, (_, alt) in enumerate(cand.iloc[1:3].iterrows(), start=2):
                 a(f"- Alternativa nº {i}: **{alt.ticker}** ({alt.get('timing','?')}) — EV {100*alt.gbm_ev:+.1f}%, "
                   f"P(≥+5%) {100*alt.p_up5_cal:.0f}%, intervalo [{100*alt.gbm_q10:+.1f}%; {100*alt.gbm_q90:+.1f}%]")
-            if gates.get("adota_cabeca_p20") and "p_up20_cal" in el.columns and el.p_up20_cal.notna().any():
-                rt = el[el.p_up20_cal.notna()].sort_values("p_up20_cal", ascending=False).iloc[0]
-                a(f"- 🎟 Bilhete de lotaria do dia: **{rt.ticker}** — {100*rt.p_up20_cal:.0f}% de "
-                  f"P(≥+20%) calibrada (cauda negativa correspondente no anexo)")
+            if gates.get("adota_cabeca_p20") and len(radar_pool):
+                rt = radar_pool.sort_values("p_up20_cal", ascending=False).iloc[0]
+                fl = f" 🚩{rt['veto_flags']}" if rt["veto_flags"] else ""
+                a(f"- 🎟 Bilhete de lotaria do dia: **{rt.ticker}**{fl} — {100*rt.p_up20_cal:.0f}% de "
+                  f"P(≥+20%) calibrada, {_dvol_str(rt.get('log_dollar_vol'))}/dia (detalhe no Radar)")
             a("*O edge validado vive no CONJUNTO dos 3 primeiros (tribunal: TOP-3 +3,97%±1,60 por fold; "
               "o nº 1 sozinho rende mais em média mas com o dobro do ruído: +4,97%±3,74). "
               "Um nome único = mais variância, não mais certeza.*")
 
-    a("\n---\n\n## ANEXO — detalhe completo (podes parar de ler aqui)")
-
-    # v10: RADAR +20% — só publica se a cabeça p20 passou os gates do tribunal
-    if gates.get("adota_cabeca_p20") and "p_up20_cal" in el.columns and el.p_up20_cal.notna().any():
-        radar = el[el.p_up20_cal.notna()].sort_values("p_up20_cal", ascending=False).head(3)
+    # v11: RADAR +20% reformado — flags visíveis SEM excluir + piso de liquidez
+    if gates.get("adota_cabeca_p20") and len(radar_pool):
+        radar = radar_pool.sort_values("p_up20_cal", ascending=False).head(5)
         a("\n## 🚀 RADAR +20% — candidatos a movimento grande")
-        a("| Ticker | Timing | P(≥+20%) calibrada | EV | Intervalo conformal 80% |")
-        a("|---|---|---|---|---|")
+        a("| Ticker | Timing | P(≥+20%) | EV | Intervalo 80% | $/dia | 🚩 Flags |")
+        a("|---|---|---|---|---|---|---|")
         for _, r in radar.iterrows():
             a(f"| {r.ticker} | {r.get('timing','?')} | **{100*r.p_up20_cal:.0f}%** "
-              f"| {100*r.gbm_ev:+.1f}% | [{100*r.gbm_q10:+.1f}%; {100*r.gbm_q90:+.1f}%] |")
-        a(f"*Moonshots são raros: estas probabilidades são honestas e tipicamente 5-20% — "
-          f"correspondem à frequência verificada em walk-forward, não a convicção. "
-          f"AVISO BICAUDAL: {RADAR_TAIL}*")
+              f"| {100*r.gbm_ev:+.1f}% | [{100*r.gbm_q10:+.1f}%; {100*r.gbm_q90:+.1f}%] "
+              f"| {_dvol_str(r.get('log_dollar_vol'))} | {r['veto_flags'] or '—'} |")
+        if len(radar_out):
+            fora = ", ".join(f"{r.ticker} ({100*r.p_up20_cal:.0f}%, {_dvol_str(r.get('log_dollar_vol'))}/dia)"
+                             for _, r in radar_out.iterrows())
+            a(f"*Fora do Radar por liquidez (<{_dvol_str(floor)}/dia): {fora}.*")
+        a(f"*v11: as flags forenses (🚩Altman/SBC/accruals/beat&fell) deixaram de excluir do Radar "
+          f"— são risco visível, não proibição; a cabeça continua a exigir zero flags. Decisão "
+          f"documentada na metodologia (não testável sem fundamentais point-in-time). Probabilidades "
+          f"honestas, tipicamente 5-20%. AVISO BICAUDAL: {RADAR_TAIL}*")
 
-    # v7: RANKING POR VALOR ESPERADO (topo do brief)
+    # v11: fábricas de moonshots — onde andam os PLTR desta vida
+    fabs = _factories()
+    if fabs:
+        linha = " · ".join(f"**{t}** ({c}×) {d.strftime('%d/%m')}" +
+                           (f" [cache {i}d]" if i > 7 else "")
+                           for t, c, d, i in fabs)
+        a("\n## 🏭 Fábricas de moonshots — próximos reports")
+        a(linha)
+        a("*Maiores produtores históricos de subidas ≥+20% no dia do report (painel 7 anos, "
+          "condicional a sobrevivência) e a PRÓXIMA data de report na cache (confirmar no IR). "
+          "Entram no brief quando a janela de 7 dias os apanhar — ex.: PLTR reporta em novembro; "
+          "não aparecer hoje é calendário, não filtro.*")
+
+    a("\n---\n\n## ANEXO — detalhe completo (podes parar de ler aqui)")
+
+    # v7: RANKING POR VALOR ESPERADO (mantém regra v7: vetado fora — o EV é média)
     if "ev_knn" in el.columns and el.ev_knn.notna().any():
-        import json as _json, os as _os
         verdict, n_scored = "—", None
-        if _os.path.exists("output/ev_validation.json"):
-            _evv = _json.load(open("output/ev_validation.json"))
+        if os.path.exists("output/ev_validation.json"):
+            _evv = json.load(open("output/ev_validation.json"))
             verdict, n_scored = _evv.get("verdict", "—"), _evv.get("n_scored")
-        a("\n## RANKING POR VALOR ESPERADO (EV) — top 10 não vetados")
+        a("\n## RANKING POR VALOR ESPERADO (EV) — top 10 sem flags")
         a(f"*Validação walk-forward (n={n_scored if n_scored else '—'} eventos): {verdict}.*")
-        a("| Ticker | Timing | EV | P(subir) | P(≥+10%) | E[subida] | Cauda top-10% | E[queda] | IC95 EV | Hype | Grau | Cresc. | Marg. | Short% | CPIV | O/S |")
-        a("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+        a("| Ticker | Timing | EV | P(subir) | P(≥+10%) | E[subida] | Cauda top-10% | E[queda] | IC95 EV | Hype | Cresc. | Marg. | Short% | CPIV | O/S |")
+        a("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
         evtop = el[el.ev_knn.notna()].sort_values("ev_knn", ascending=False).head(10)
         for _, r in evtop.iterrows():
             hy = r.get("hype_score")
@@ -187,7 +237,7 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
             ci = f"[{100*r.ev_ci_lo:+.1f};{100*r.ev_ci_hi:+.1f}]" if pd.notna(r.get("ev_ci_lo")) else "—"
             a(f"| {r.ticker} | {r.get('timing','?')} | **{100*r.ev_knn:+.1f}%** "
               f"| {100*r.p_up:.0f}% | {100*r.p_big:.0f}% | {100*r.e_up:+.1f}% "
-              f"| {100*r.tail_up:+.1f}% | {100*r.downside:+.1f}% | {ci} | {hy_s} | {r.get('grade','')} "
+              f"| {100*r.tail_up:+.1f}% | {100*r.downside:+.1f}% | {ci} | {hy_s} "
               f"| {_fmt(r.get('rev_acceleration'), pct=True, nd=0) if pd.notna(r.get('rev_acceleration')) else '—'} "
               f"| {_fmt(r.get('sbc_pct_revenue'), pct=True, nd=0) if pd.notna(r.get('sbc_pct_revenue')) else '—'} "
               f"| {_fmt(r.get('short_pct_float'), pct=True, nd=0) if pd.notna(r.get('short_pct_float')) else '—'} "
@@ -201,24 +251,12 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
     elif "ev_knn" not in el.columns:
         a("\n*EV não calculado neste ciclo.*")
 
-    for g, title in [("A", "GRAU A — passam todos os filtros de qualidade"),
-                     ("B", "GRAU B — sólidos com uma reserva (estimador único ou edge 0,8–1,0)"),
-                     ("C", "GRAU C — vigia (não vetados, sem edge citável)")]:
-        sub = el[el.grade == g]
-        if sub.empty:
-            if g == "A":
-                a(f"\n## {title}\n*Nenhum candidato atingiu o grau A neste ciclo — dias sem grau A são normais e são informação.*")
-            continue
-        a(f"\n## {title}")
-        a(HEADER_MD)
-        for _, r in sub.head(10 if g != "C" else 5).iterrows():
-            a(_row_md(r))
-
-    vet = opp[opp._vetoed]
-    if not vet.empty:
-        a("\n## Vetados (forense manda)")
-        for _, r in vet.sort_values("score", ascending=False).head(8).iterrows():
-            a(f"- {r.ticker}: {r.veto_v3}")
+    flagged = opp[opp["veto_flags"] != ""]
+    if not flagged.empty:
+        a("\n## 🚩 Flags forenses do dia (contexto — já não excluem do Radar; a cabeça exige zero flags)")
+        srt = "gbm_ev" if "gbm_ev" in flagged.columns else "score"
+        for _, r in flagged.sort_values(srt, ascending=False).head(10).iterrows():
+            a(f"- {r.ticker}: {r['veto_flags']}")
 
     macro = [m for m in config.MACRO_EVENTS if m["date"] in (d_amc, d_bmo)]
     if macro:
@@ -230,11 +268,11 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
     a("\n---")
     a("*Este brief é informação, não recomendação de compra ou venda. Cada secção cita "
       "o seu próprio veredito de validação sem lookahead — o que não estiver marcado "
-      "como validado é indistinguível de ruído; os graus medem a qualidade do setup, "
-      "não a probabilidade de lucro. As quotes de opções são do fecho — reconfirma no "
-      "próprio dia. Stops não protegem através de gaps; o tamanho da posição é o único "
-      "controlo real. O EV vem de analogs históricos com IC largo (veredito citado na "
-      "própria secção). Decisões são tuas.*")
+      "como validado é indistinguível de ruído. Flags forenses são risco visível, não "
+      "proibição (v11); a cabeça exige zero flags. As quotes de opções são do fecho — "
+      "reconfirma no próprio dia. Stops não protegem através de gaps; o tamanho da "
+      "posição é o único controlo real. O EV vem de analogs históricos com IC largo "
+      "(veredito citado na própria secção). Decisões são tuas.*")
 
     md = "\n".join(L)
     md_path = f"output/brief_{T.isoformat()}.md"
@@ -274,7 +312,8 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
     html_path = f"output/brief_{T.isoformat()}.html"
     with open(html_path, "w") as f:
         f.write(html)
-    print(f"OK: {md_path} + {html_path} | grau A: {len(el[el.grade=='A'])} · B: {len(el[el.grade=='B'])} · C: {len(el[el.grade=='C'])}")
+    print(f"OK: {md_path} + {html_path} | âmbito: {len(opp)} · sem flags: {len(el)} · "
+          f"radar: {len(radar_pool)} (+{len(radar_out)} sob o piso) · flags: {len(opp)-len(el)}")
     return md_path, html_path
 
 
