@@ -117,6 +117,20 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
       f"e antes da abertura de {d_bmo.strftime('%d/%m')}. Prazo único de decisão: "
       f"**{dl.strftime('%d/%m')} às 21:00 de Lisboa**.*")
 
+    # v12: regime + tripwires (contexto de sizing, zero peso — metodologia v12§3-4)
+    if os.path.exists("output/monitor.json"):
+        mon = json.load(open("output/monitor.json"))
+        rg = mon.get("regime")
+        if rg:
+            a(f"\n*Regime de earnings: **{rg['label']}** — {100*rg['frac_acima_habito']:.0f}% dos "
+              f"últimos {rg['n']} eventos moveram acima do hábito próprio (até {rg['ate']}). "
+              f"Contexto de sizing, zero peso no ranking.*")
+        if mon.get("any_tripped"):
+            tw = ", ".join(t["tripwire"] for t in mon["tripped"])
+            a(f"\n## ⚠ TRIPWIRE DISPARADO: {tw}")
+            a("*Um critério pré-registado de avaria do sistema falhou (metodologia v12§4) — "
+              "tratar os rankings deste brief com desconfiança até revisão.*")
+
     # posições do utilizador com evento próximo
     pos_events = df[df.ticker.isin(config.EXISTING_POSITIONS) &
                     df.event_date.isin([d_amc.isoformat(), d_bmo.isoformat()])]

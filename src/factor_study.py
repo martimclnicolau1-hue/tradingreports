@@ -135,6 +135,15 @@ def build_panel():
     df = pd.DataFrame(rows)
     if not df.empty:
         df["n_events_same_day"] = df.groupby("event_date")["ticker"].transform("count")
+        # v12: features FINRA (PIT, keyed na data do ficheiro) — merge declarado v12§2
+        try:
+            from . import finra_short
+            if os.path.exists(finra_short.DATA):
+                df = finra_short.attach_features(df)
+                print(f"[build_panel] FINRA: short_ratio_z5 cobre "
+                      f"{df.short_ratio_z5.notna().mean():.0%} dos eventos")
+        except Exception as e:
+            print(f"[build_panel] FINRA indisponível ({e}) — painel sem short_ratio_*")
     return df
 
 def tstat(df, x, y):

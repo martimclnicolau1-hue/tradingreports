@@ -22,6 +22,8 @@ FEATS = ev_engine.FEATURES + ["vix", "dow", "is_amc", "n_events_same_day"]
 # v10 braço B: − log_mcap (look-ahead agrava a 10 anos) + nível de preço + liquidez $ PIT
 FEATS_V10 = [f for f in FEATS if f != "log_mcap"] + ["log_close", "log_dollar_vol"]
 FEATS = FEATS_V10  # ADOTADO — tribunal v10 2026-08-05, gates 1∧2∧3 (ver metodologia)
+# v12 braço B: + short-sale volume FINRA (PIT desde 2018-08; metodologia v12§2)
+FEATS_V12 = FEATS + ["short_ratio_z5", "short_ratio_z20"]
 GBM_PARAMS = dict(max_iter=300, learning_rate=0.05, max_depth=4,
                   l2_regularization=1.0, random_state=42)
 N_FOLDS = 30
@@ -332,7 +334,38 @@ def score_candidates(csv_path="output/candidatos.csv", feats=None):
     return df
 
 
+def _run_ab(panel, featsA, featsB, tag, labelA, labelB):
+    """Corrida A/B genérica com gates pré-registados (infraestrutura v10)."""
+    print(f"TRIBUNAL {tag} — painel {len(panel)} eventos "
+          f"({panel.event_date.min()} → {panel.event_date.max()})")
+    outA = tournament(panel, feats=featsA, include_knn=False,
+                      out_path=f"output/gbm_validation_{tag}A.json")
+    print(f"Braço A ({labelA}):"); _print_summary(outA)
+    outB = tournament(panel, feats=featsB, include_knn=False,
+                      out_path=f"output/gbm_validation_{tag}B.json")
+    print(f"Braço B ({labelB}):"); _print_summary(outB)
+    g = gates_v10(outA, outB)
+    print(f"\nGATES pré-registados:")
+    print(f"  Gate 1 não-regressão: {'PASSA' if g['gate1_nao_regressao'] else 'FALHA'} "
+          f"(diff {100*g['gate1_diff_media']:+.3f}pp, SE {100*g['gate1_se']:.3f}pp) "
+          f"→ features do braço {g['braco_features']}")
+    print(f"  Gate 2 edge moonshot: {'PASSA' if g['gate2_edge_moonshot'] else 'FALHA'}")
+    print(f"  Gate 3 calibração: {'PASSA' if g['gate3_calibracao'] else 'FALHA'}")
+    print(f"  DECISÃO: features B={'ADOTA' if g['adota_features_B'] else 'NÃO'} | "
+          f"cabeça p20={'ADOTA' if g['adota_cabeca_p20'] else 'NÃO'}")
+    with open(f"output/gates_{tag}.json", "w") as f:
+        json.dump(g, f, indent=1)
+    return g
+
+
 if __name__ == "__main__":
+    if "--tournament-v12" in sys.argv:
+        panel = ev_engine.load_panel()
+        missing = [c for c in FEATS_V12 if c not in panel.columns]
+        if missing:
+            sys.exit(f"painel sem colunas {missing} — corre o backfill FINRA + rebuild primeiro")
+        _run_ab(panel, FEATS, FEATS_V12, "v12",
+                "13 features v10", "15 = v10 + short_ratio_z5/z20 FINRA")
     if "--tournament-v10" in sys.argv:
         panel = ev_engine.load_panel()
         print(f"TRIBUNAL v10 — painel {len(panel)} eventos "
