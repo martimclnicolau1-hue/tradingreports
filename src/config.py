@@ -88,6 +88,7 @@ MANUAL_EVENTS = [
 # ---------------------------------------------------------------------------
 N_PAST_EARNINGS = 12          # nº de reações históricas a analisar
 BIG_MOVE_THRESHOLD = 0.10     # |move| >= 10% conta como "movimento grande"
+BIG_UP20 = 0.20               # v10: limiar "moonshot" (fixo na metodologia v10)
 CACHE_DIR = "data"            # cache local para não martelar as APIs
 REQUEST_SLEEP = 0.6           # segundos entre pedidos (rate-limit friendly)
 SEC_USER_AGENT = "EventCalendarResearch/1.0 (contacto: luis@nikufra.ai)"

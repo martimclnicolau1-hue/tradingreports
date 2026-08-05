@@ -19,6 +19,12 @@ import pandas as pd
 
 from . import config
 
+# v10: aviso bicaudal do Radar — números medidos no estudo (studies/bigwinners.md);
+# constante datada, refrescada apenas em re-estudo.
+RADAR_TAIL = ("o mesmo perfil que produz subidas ≥+20% produz também quedas ≤−20% "
+              "(rácio medido no estudo v10 — ver studies/bigwinners.md). "
+              "Volatilidade não é direção.")
+
 
 def _grade(r):
     a, b = r.get("edge_ratio"), r.get("edge_ratio_clean")
@@ -102,8 +108,9 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
                 lo_hi = c["bucket"].strip("(]").split(",")
                 try:
                     if float(lo_hi[0]) < pick.p_up5_cal <= float(lo_hi[1]):
+                        small = " — amostra pequena, pouco fiável" if c["n"] < 30 else ""
                         audit = (f" (auditoria walk-forward: quando o sistema previu ~{100*c['previsto']:.0f}%, "
-                                 f"aconteceu {100*c['realizado']:.0f}% das vezes, n={c['n']})")
+                                 f"aconteceu {100*c['realizado']:.0f}% das vezes, n={c['n']}{small})")
                         break
                 except ValueError:
                     continue
@@ -119,16 +126,33 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
             a(f"*Nenhum candidato atingiu P(≥+5%) calibrada ≥ {100*limiar:.0f}% (melhor: {best}). "
               f"O sistema abstém-se por regra — dias sem sinal são informação, não falha.*")
 
+    # v10: RADAR +20% — só publica se a cabeça p20 passou os gates do tribunal
+    gates = {}
+    if _os.path.exists("output/gates_v10.json"):
+        gates = _json.load(open("output/gates_v10.json"))
+    if gates.get("adota_cabeca_p20") and "p_up20_cal" in el.columns and el.p_up20_cal.notna().any():
+        radar = el[el.p_up20_cal.notna()].sort_values("p_up20_cal", ascending=False).head(3)
+        a("\n## 🚀 RADAR +20% — candidatos a movimento grande")
+        a("| Ticker | Timing | P(≥+20%) calibrada | EV | Intervalo conformal 80% |")
+        a("|---|---|---|---|---|")
+        for _, r in radar.iterrows():
+            a(f"| {r.ticker} | {r.get('timing','?')} | **{100*r.p_up20_cal:.0f}%** "
+              f"| {100*r.gbm_ev:+.1f}% | [{100*r.gbm_q10:+.1f}%; {100*r.gbm_q90:+.1f}%] |")
+        a(f"*Moonshots são raros: estas probabilidades são honestas e tipicamente 5-20% — "
+          f"correspondem à frequência verificada em walk-forward, não a convicção. "
+          f"AVISO BICAUDAL: {RADAR_TAIL}*")
+
     # v7: RANKING POR VALOR ESPERADO (topo do brief)
     if "ev_knn" in el.columns and el.ev_knn.notna().any():
         import json as _json, os as _os
-        verdict = "—"
+        verdict, n_scored = "—", None
         if _os.path.exists("output/ev_validation.json"):
-            verdict = _json.load(open("output/ev_validation.json")).get("verdict", "—")
+            _evv = _json.load(open("output/ev_validation.json"))
+            verdict, n_scored = _evv.get("verdict", "—"), _evv.get("n_scored")
         a("\n## RANKING POR VALOR ESPERADO (EV) — top 10 não vetados")
-        a(f"*Validação walk-forward (n=5.934 eventos): {verdict}.*")
-        a("| Ticker | Timing | EV | P(subir) | P(≥+10%) | E[subida] | Cauda top-10% | E[queda] | IC95 EV | Hype | Grau | Cresc. | Marg. | Short% |")
-        a("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+        a(f"*Validação walk-forward (n={n_scored if n_scored else '—'} eventos): {verdict}.*")
+        a("| Ticker | Timing | EV | P(subir) | P(≥+10%) | E[subida] | Cauda top-10% | E[queda] | IC95 EV | Hype | Grau | Cresc. | Marg. | Short% | CPIV | O/S |")
+        a("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
         evtop = el[el.ev_knn.notna()].sort_values("ev_knn", ascending=False).head(10)
         for _, r in evtop.iterrows():
             hy = r.get("hype_score")
@@ -139,9 +163,14 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
               f"| {100*r.tail_up:+.1f}% | {100*r.downside:+.1f}% | {ci} | {hy_s} | {r.get('grade','')} "
               f"| {_fmt(r.get('rev_acceleration'), pct=True, nd=0) if pd.notna(r.get('rev_acceleration')) else '—'} "
               f"| {_fmt(r.get('sbc_pct_revenue'), pct=True, nd=0) if pd.notna(r.get('sbc_pct_revenue')) else '—'} "
-              f"| {_fmt(r.get('short_pct_float'), pct=True, nd=0) if pd.notna(r.get('short_pct_float')) else '—'} |")
+              f"| {_fmt(r.get('short_pct_float'), pct=True, nd=0) if pd.notna(r.get('short_pct_float')) else '—'} "
+              f"| {f'{100*r.cpiv:+.1f}pp' if pd.notna(r.get('cpiv')) else '—'} "
+              f"| {f'{r.os_ratio:.1f}' if pd.notna(r.get('os_ratio')) else '—'} |")
         a("*EV estimado por 50 analogs históricos — ordenação com erro largo, não previsão. "
-          "Hype = atenção social atual; a literatura documenta subida de curto prazo seguida de REVERSÃO após picos.*")
+          "Hype = atenção social atual; a literatura documenta subida de curto prazo seguida de REVERSÃO após picos. "
+          "CPIV = spread IV call−put ATM do nosso arquivo (positivo = calls caras, inclinação bullish documentada); "
+          "O/S = volume de opções ÷ volume de ações. Ambos CONTEXTO com zero peso; caveat "
+          "Muravyev-Pearson-Pollet: ~2/3 destes sinais refletem borrow fees, não informação.*")
     elif "ev_knn" not in el.columns:
         a("\n*EV não calculado neste ciclo.*")
 

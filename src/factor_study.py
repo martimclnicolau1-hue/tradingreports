@@ -6,18 +6,20 @@ Fatores calculados APENAS com informação disponível ANTES de cada evento.
 Regra de re-ponderação registada ANTES de correr (ver metodologia.md v3):
 pesos direcionais proporcionais a |t|; snapshot fundamental = veto, não peso.
 """
-import glob, json, os
+import glob, json, os, time
 import numpy as np, pandas as pd
 
 from .reactions import event_reactions
 
 _VIX = None
 def vix_on(date_str):
-    """Fecho do ^VIX no dia (ou último anterior). Cache em data/prices_^VIX.csv."""
+    """Fecho do ^VIX no dia (ou último anterior). Cache em data/vix.csv;
+    refetch se o ficheiro tiver >5 dias (senão o VIX do scoring ficava fóssil)."""
     global _VIX
     if _VIX is None:
         p = "data/vix.csv"
-        if not os.path.exists(p):
+        stale = os.path.exists(p) and (time.time() - os.path.getmtime(p)) > 5*86400
+        if not os.path.exists(p) or stale:
             try:
                 import yfinance as yf
                 h = yf.Ticker("^VIX").history(period="10y")
@@ -67,6 +69,13 @@ def features_from_history(closes_pre, vols_pre, hist_reactions, hist_surprises, 
         v60 = np.nanmean(vols_pre[-65:-5]); v5 = np.nanmean(vols_pre[-5:])
         if v60 and v60 > 0:
             relvol = float(v5/v60)
+    # v10: nível de preço (efeito lottery) e liquidez $ point-in-time
+    log_close = float(np.log10(closes_pre[-1])) if closes_pre[-1] > 0 else None
+    ldv = None
+    if vols_pre is not None and len(vols_pre) >= 20:
+        dv = np.nanmean(np.asarray(closes_pre[-20:]) * np.asarray(vols_pre[-20:], dtype=float))
+        if np.isfinite(dv) and dv > 0:
+            ldv = float(np.log10(dv))
     return {
         "prior_beat_rate": float(np.mean([s > 0 for s in hs])) if len(hs) >= 4 else None,
         "prior_skew": float((hr >= .10).mean() - (hr <= -.10).mean()),
@@ -75,6 +84,7 @@ def features_from_history(closes_pre, vols_pre, hist_reactions, hist_surprises, 
         "sandbag": float(np.mean(hs[:4])) if len(hs) >= 3 else None,
         "mom60": mom60, "dist_52w_high": d52, "rsi14": rsi,
         "log_mcap": log_mcap, "rel_volume": relvol,
+        "log_close": log_close, "log_dollar_vol": ldv,
     }
 
 
