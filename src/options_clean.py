@@ -82,10 +82,18 @@ if __name__ == "__main__":
         res = json.load(open("data/optclean.json"))
     else:
         res = {}
+    # v11: carimbo asof — quotes do ÂMBITO (eventos ≤ T+2) refrescam diariamente;
+    # o resto mantém a cache (staleness silenciosa era invisível antes)
+    from datetime import date as _date, timedelta as _td
+    hoje = _date.today().isoformat()
+    cut = (_date.today() + _td(days=2)).isoformat()
+    in_scope = set(df.loc[df.event_date.notna() & (df.event_date <= cut), "ticker"])
     for i, tkr in enumerate(df.ticker, 1):
-        if tkr in res: continue
+        hit = res.get(tkr)
+        if hit and (tkr not in in_scope or hit.get("asof") == hoje):
+            continue
         print(f"[{i}/{len(df)}] {tkr}")
-        r = analyze(tkr); r["sandbag_surprise_4q"] = sandbag(tkr)
+        r = analyze(tkr); r["sandbag_surprise_4q"] = sandbag(tkr); r["asof"] = hoje
         res[tkr] = r; time.sleep(0.3)
         json.dump(res, open("data/optclean.json","w"))
     for col in ["clean_event_move","iv_skew_put_call","put_call_vol_ratio","sandbag_surprise_4q"]:

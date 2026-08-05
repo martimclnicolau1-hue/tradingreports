@@ -303,7 +303,7 @@ def score_candidates(csv_path="output/candidatos.csv", feats=None):
     for _, r in df.iterrows():
         cf = ev_engine.candidate_features(r.ticker)
         if cf is None or not r.event_date or pd.isna(r.event_date):
-            rows.append([np.nan] * 7)
+            rows.append([np.nan] * 8)
             continue
         try:
             dow = dt.date.fromisoformat(str(r.event_date)).weekday()
@@ -322,8 +322,10 @@ def score_candidates(csv_path="output/candidatos.csv", feats=None):
                      float(q90.predict(v)[0] + qhat),
                      float(clf5.predict_proba(v)[0, 1]) if clf5 is not None else np.nan,
                      float(clf20.predict_proba(v)[0, 1]) if clf20 is not None else np.nan,
-                     1.0])
-    cols = ["gbm_ev", "gbm_q10", "gbm_q50", "gbm_q90", "p_up5_cal", "p_up20_cal", "gbm_scored"]
+                     1.0,
+                     cf.get("log_dollar_vol") if cf.get("log_dollar_vol") is not None else np.nan])
+    cols = ["gbm_ev", "gbm_q10", "gbm_q50", "gbm_q90", "p_up5_cal", "p_up20_cal", "gbm_scored",
+            "log_dollar_vol"]
     for i, c in enumerate(cols):
         df[c] = [row[i] for row in rows]
     df.to_csv(csv_path, index=False)
