@@ -104,17 +104,21 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
         names = ", ".join(morning_info.sort_values("score", ascending=False).ticker.head(8))
         a(f"\n*Amanhã de manhã (prazo já encerrado): {names}*")
 
-    # v8: PICK DE MAIOR CONFIANÇA + abstenção (manchete)
+    # v10.2: UM candidato à cabeça + 2 alternativas; regra de seleção INALTERADA
+    # (topo do gbm_ev entre elegíveis — a mesma ordenação pré-registada desde a v8);
+    # o resto do detalhe desce para o ANEXO. Mudança de apresentação, não de método.
     import json as _json, os as _os
     val = {}
     if _os.path.exists("output/gbm_validation.json"):
         val = _json.load(open("output/gbm_validation.json"))
+    gates = {}
+    if _os.path.exists("output/gates_v10.json"):
+        gates = _json.load(open("output/gates_v10.json"))
     if "p_up5_cal" in el.columns and el.p_up5_cal.notna().any() and val:
         cand = el[el.p_up5_cal.notna()].sort_values("gbm_ev", ascending=False)
         pick = cand.iloc[0] if len(cand) else None
         limiar = val.get("abstencao", {}).get("limiar", 0.65)
-        if pick is not None and pick.p_up5_cal >= limiar:
-            # frase de auditoria do bucket correspondente
+        if pick is not None:
             audit = ""
             for c in val.get("calibration", []):
                 lo_hi = c["bucket"].strip("(]").split(",")
@@ -126,22 +130,32 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
                         break
                 except ValueError:
                     continue
-            a(f"\n## 🎯 PICK DE MAIOR CONFIANÇA: {pick.ticker} ({pick.get('timing','?')})")
+            selo = bool(pick.p_up5_cal >= limiar)
+            titulo = ("PICK DE MAIOR CONFIANÇA" if selo
+                      else "CANDIDATO Nº 1 DO DIA (sem selo de alta confiança)")
+            a(f"\n## 🎯 {titulo}: {pick.ticker} ({pick.get('timing','?')})")
             a(f"P(subir ≥+5%) calibrada: **{100*pick.p_up5_cal:.0f}%**{audit}. "
               f"EV do modelo: {100*pick.gbm_ev:+.1f}% | intervalo conformal 80%: "
-              f"[{100*pick.gbm_q10:+.1f}%; {100*pick.gbm_q90:+.1f}%]. "
-              f"*Confiança calibrada ≠ garantia — significa que a percentagem anunciada "
-              f"corresponde à frequência histórica verificada.*")
-        else:
-            a("\n## SEM SINAL DE ALTA CONFIANÇA HOJE")
-            best = f"{pick.ticker} com {100*pick.p_up5_cal:.0f}%" if pick is not None else "—"
-            a(f"*Nenhum candidato atingiu P(≥+5%) calibrada ≥ {100*limiar:.0f}% (melhor: {best}). "
-              f"O sistema abstém-se por regra — dias sem sinal são informação, não falha.*")
+              f"[{100*pick.gbm_q10:+.1f}%; {100*pick.gbm_q90:+.1f}%].")
+            if not selo:
+                a(f"*Nº 1 pela regra pré-registada (maior EV entre não-vetados) — não é garantia: "
+                  f"o selo exige P(≥+5%) calibrada ≥{100*limiar:.0f}%, que nunca ocorreu em 25,6k eventos "
+                  f"históricos. Confiança calibrada = frequência verificada, e {100*pick.p_up5_cal:.0f}% "
+                  f"também significa ~{100*(1-pick.p_up5_cal):.0f}% de NÃO subir 5%.*")
+            for i, (_, alt) in enumerate(cand.iloc[1:3].iterrows(), start=2):
+                a(f"- Alternativa nº {i}: **{alt.ticker}** ({alt.get('timing','?')}) — EV {100*alt.gbm_ev:+.1f}%, "
+                  f"P(≥+5%) {100*alt.p_up5_cal:.0f}%, intervalo [{100*alt.gbm_q10:+.1f}%; {100*alt.gbm_q90:+.1f}%]")
+            if gates.get("adota_cabeca_p20") and "p_up20_cal" in el.columns and el.p_up20_cal.notna().any():
+                rt = el[el.p_up20_cal.notna()].sort_values("p_up20_cal", ascending=False).iloc[0]
+                a(f"- 🎟 Bilhete de lotaria do dia: **{rt.ticker}** — {100*rt.p_up20_cal:.0f}% de "
+                  f"P(≥+20%) calibrada (cauda negativa correspondente no anexo)")
+            a("*O edge validado vive no CONJUNTO dos 3 primeiros (tribunal: TOP-3 +3,97%±1,60 por fold; "
+              "o nº 1 sozinho rende mais em média mas com o dobro do ruído: +4,97%±3,74). "
+              "Um nome único = mais variância, não mais certeza.*")
+
+    a("\n---\n\n## ANEXO — detalhe completo (podes parar de ler aqui)")
 
     # v10: RADAR +20% — só publica se a cabeça p20 passou os gates do tribunal
-    gates = {}
-    if _os.path.exists("output/gates_v10.json"):
-        gates = _json.load(open("output/gates_v10.json"))
     if gates.get("adota_cabeca_p20") and "p_up20_cal" in el.columns and el.p_up20_cal.notna().any():
         radar = el[el.p_up20_cal.notna()].sort_values("p_up20_cal", ascending=False).head(3)
         a("\n## 🚀 RADAR +20% — candidatos a movimento grande")

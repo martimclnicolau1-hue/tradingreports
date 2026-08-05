@@ -431,3 +431,15 @@ Painel 25.875 eventos, 30 folds ancorados, braços exatamente como pré-registad
   provado" é SUBSTITUÍDO pelo veredito novo do ev_validation.json. Quatro
   vezes mais dados encontraram o spread que 5,9k eventos não conseguiam
   distinguir de ruído.
+
+### NOTA v10.2 — apresentação do brief (2026-08-05, pedido do utilizador)
+O brief passa a abrir com UM "Candidato nº 1 do dia" nomeado + 2 alternativas
++ bilhete de lotaria em linha única; todo o detalhe (tabelas EV, Radar, graus,
+vetados) desce para um ANEXO marcado. A REGRA DE SELEÇÃO É A JÁ PRÉ-REGISTADA
+(topo do gbm_ev entre elegíveis não-vetados, v8§5) — zero alterações de método,
+pesos ou limiares; mudança de apresentação apenas. O selo "alta confiança"
+mantém o limiar 0,65; abaixo dele o nº 1 é nomeado com a etiqueta "sem selo"
+e a probabilidade complementar explícita. Racional documentado: o tribunal
+valida o edge no TOP-3 (±1,60), não no top-1 (±3,74) — o brief nomeia um mas
+mostra sempre os três. Também acrescentado modo pré-fecho (EVENTCAL_TODAY=1,
+AMC de hoje + BMO de amanhã, prazo hoje 21:00) — v10.1, mesma lógica.
