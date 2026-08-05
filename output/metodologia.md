@@ -298,3 +298,90 @@ documentado no research_v9.md: R² de anúncio ~1% é o estado da arte académic
 Calibração mantém-se excelente nos buckets povoados (24→23; 32→34; 43→45).
 Abstenção: 0 sinais ≥0,65 em 5.431 eventos — confirmação definitiva de que o
 limiar pré-registado está acima do alcançável com dados públicos.
+
+---
+
+### ERRATA (2026-08-05, auditoria pós-v9)
+A adenda v9 diz "14 features"; o código usa **12** (as 8 do kNN + vix, dow,
+is_amc, n_events_same_day — `prior_beat_rate` e `prior_skew` estão no painel
+mas fora de FEATS). Registado como errata; o histórico não se reescreve.
+
+## REVISÃO v10 — 2026-08-05, registada ANTES do estudo big-winners e do tribunal
+
+Pedido do utilizador: identificar ex-ante os nomes que sobem ≥ +20% no dia do
+report ("moonshots"), estudados a 7 anos, e aplicar ao sistema. Projeto movido
+para ~/Projects/event_calendar e posto sob git — o commit deste pré-registo
+antecede o commit de qualquer resultado (prova de data). REGRAS FIXADAS AGORA:
+
+1. **DADOS**: preços period=10y (antes 3y — era o gargalo real do painel:
+   21 meses), earnings limit=100 (antes 30, bucketizado para 50 em 443
+   tickers), backfill dos 49 tickers com earnings mas sem preços (NVDA, AMD,
+   PLTR, COIN, …). Painel reconstruído (~4-6× eventos esperados). O baseline
+   v9 é RE-CORRIDO no painel novo (braço A) — comparar braço B com números
+   antigos seria comparar universos diferentes.
+2. **LIMIARES (fixos antes de olhar)**: moonshot y ≥ +0,20; cauda simétrica
+   y ≤ −0,20 reportada SEMPRE ao lado. Janela primária do estudo:
+   event_date ≥ 2019-08-01 (7 anos); painel anterior a isso = contexto.
+   Sem otimização de limiar em circunstância alguma.
+3. **VIÉS DE SOBREVIVÊNCIA DECLARADO**: o painel 10y nasce do universo de
+   HOJE — deslistados/adquiridos 2019-2025 (incl. blow-ups) estão ausentes.
+   Todas as taxas-base são CONDICIONAIS a "sobreviveu até 2026"; nenhuma
+   afirmação incondicional. Sem mitigação gratuita (dados de delisting não
+   são livres); honestidade em vez de correção.
+4. **log_mcap**: o look-ahead declarado na v7 (mcap de hoje em eventos
+   históricos) AGRAVA-SE a 7-10 anos. No ESTUDO, o eixo de tamanho é
+   log_dollar_vol (point-in-time verdadeiro: média 20d de close×volume da
+   própria cache); log_mcap aparece só em tabela de contexto com aviso.
+   No MODELO, o braço B remove-o (ver 6).
+5. **FEATURES CANDIDATAS NOVAS (máx. 2, ambas point-in-time da cache
+   existente)**: log_close (nível de preço — efeito lottery/low-price,
+   Kumar 2009) e log_dollar_vol (tamanho/liquidez PIT, substitui o papel do
+   mcap). REJEITADAS com motivo: n_prior_events (artefacto da janela de
+   dados, não idade da empresa); prior_big_up_rate a 20% (com base-rate
+   ~4,5% e ≥4 eventos prévios é quase sempre 0 — esparso; a concentração
+   repeat-offender mede-se no estudo e, se forte, candidata-se em versão
+   futura com estimador encolhido).
+6. **TRIBUNAL v10** (harness idêntico: 30 folds ancorados, MIN_TRAIN=800,
+   GBM congelado): braço A = 12 features v9 no painel novo (baseline);
+   braço B = 13 features = v9 − log_mcap + log_close + log_dollar_vol.
+   Exatamente DUAS corridas; sem terceiros braços nem re-tuning.
+7. **CABEÇA p_up20_cal**: CalibratedClassifierCV isotónica, target
+   y ≥ +0,20, mesmo padrão da p_up5_cal, avaliada dentro dos MESMOS folds.
+   SEM limiar de abstenção (lição da v8: limiares acima do alcançável).
+   Métricas: curva de calibração; precision@3 diária (dos top-3 diários por
+   p20 no teste, fração com y≥+0,20); captura diária (dos eventos de teste
+   com y≥+0,20, fração presente nesses top-3).
+8. **REGRA DE ADOÇÃO — gates fixados agora** (diferenças EMPARELHADAS por
+   fold; SE = std/√F):
+   - Gate 1 (não-regressão do primário): média(top3_B − top3_A) ≥ −1·SE.
+   - Gate 2 (edge moonshot): captura(p20, braço vencedor do Gate 1) >
+     captura(top-3 por p_up5, braço A) E limite inferior Wilson-95 de
+     precision@3(p20) > taxa-base agregada de teste (~4-5%).
+   - Gate 3 (calibração honesta): todos os buckets p20 com n≥30 têm
+     realizado ∈ [0,5×; 2×] do previsto; buckets n<30 publicam-se só com
+     aviso de amostra pequena.
+   - Decisão: 1∧2∧3 → adota features vencedoras + cabeça p20 + Radar no
+     brief · Gate 1 falha → features v9 mantêm-se, cabeça avaliada no braço
+     A com Gates 2∧3 · Gate 2 falha → sem Radar · nada passa → modelo
+     inalterado e a adenda di-lo. Sem terceiras corridas, sem ajustes.
+9. **BRIEF**: secção "Radar +20%" (top-3 por p_up20_cal, probabilidades
+   honestas tipicamente 5-20%, aviso bicaudal com o rácio up:down medido no
+   estudo, constante datada) SÓ se a cabeça for adotada. CPIV/O·S passam a
+   visíveis na tabela EV (contexto, zero peso; caveat MPP mantém-se).
+   Aviso automático "amostra pequena" em buckets de calibração com n<30.
+   O "n=5.934" hardcoded passa a ler n_scored do ev_validation.json.
+10. **ESTUDO (studies/bigwinners.py → studies/bigwinners.md)** — índice
+    pré-registado: QA do painel; taxas-base por ano e regime VIX (bins fixos
+    <15 / 15-25 / >25); perfis por quartil das features (P(big_up) SEMPRE ao
+    lado de P(big_dn)); interação única log_close × prior_avg_move (4×4);
+    repeat offenders (P(≥+20% | ≥1 big-up nos 8 prévios)); mecanismo
+    (surprise, rotulado "só conhecido após o print"); perfil-lotaria
+    pré-declarado = quartil topo de prior_avg_move ∧ metade inferior de
+    log_close (P(±20%), rácio up:down, EV bruto sem custos — declarado);
+    setor (look-ahead residual declarado). FORA DE ÂMBITO: intraday, NLP,
+    histórico de opções (arquivo tem dias), fundamentais PIT, deslistados,
+    otimização de limiares.
+
+### ADENDA v10-estudo — resultados (por datar após correr)
+
+### ADENDA v10-tribunal — resultados e decisão (por datar após correr)
