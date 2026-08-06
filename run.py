@@ -124,7 +124,7 @@ def main():
     enrich |= set(getattr(config, "ALWAYS_ENRICH", [])) | set(config.EXISTING_POSITIONS)
     # v11: todo o candidato exibível no brief (eventos até T+2) ganha tentativa de
     # quote — desacopla o custo (top-N) da elegibilidade de display ("custo, não critério")
-    cut = (config.WINDOW_START + timedelta(days=2)).isoformat()
+    cut = (config.WINDOW_START + timedelta(days=getattr(config, "SCOPE_DAYS", 3))).isoformat()
     scope = [r for r in ranked if r["event_date"] and r["event_date"] <= cut]
     if len(scope) > 300:
         print(f"[AVISO] âmbito exibível com {len(scope)} tickers > cap 300 — "

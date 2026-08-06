@@ -399,6 +399,37 @@ if __name__ == "__main__":
               f"cabeça p20/Radar={'ADOTA' if g['adota_cabeca_p20'] else 'NÃO'}")
         with open("output/gates_v10.json", "w") as f:
             json.dump(g, f, indent=1)
+    if "--tournament-v13" in sys.argv:
+        import os as _os
+        panel_A = ev_engine.load_panel()
+        print(f"TRIBUNAL v13 (|y| 1,0 vs 2,0+guarda) — braço A: {len(panel_A)} eventos")
+        outA = tournament(panel_A, feats=FEATS, include_knn=False,
+                          out_path="output/gbm_validation_v13A.json")
+        print("Braço A (|y|≤1,0, status quo):")
+        _print_summary(outA)
+        _os.environ["EVENTCAL_YMAX"] = "2.0"
+        from .factor_study import build_panel as _bp
+        pB = _bp()
+        pB = pB[pB.y.notna() & (pB.y.abs() <= 2.0)].reset_index(drop=True)
+        print(f"Braço B: {len(pB)} eventos (+{len(pB)-len(panel_A)} vs A)")
+        outB = tournament(pB, feats=FEATS, include_knn=False,
+                          out_path="output/gbm_validation_v13B.json")
+        print("Braço B (|y|≤2,0 com guarda de sanidade):")
+        _print_summary(outB)
+        g = gates_v10(outA, outB)
+        # v13§3: decisão por Gates 1∧3 (Gate 2 rege só cabeças novas — desambiguação v12)
+        adota = bool(g["gate1_nao_regressao"] and g["gate3_calibracao"])
+        print("\nGATES v13 (decisão = 1∧3; Gate 2 informativo):")
+        print(f"  Gate 1 não-regressão: {'PASSA' if g['gate1_nao_regressao'] else 'FALHA'} "
+              f"(diff {100*g['gate1_diff_media']:+.3f}pp, SE {100*g['gate1_se']:.3f}pp)")
+        print(f"  Gate 3 calibração: {'PASSA' if g['gate3_calibracao'] else 'FALHA'} "
+              f"({g['n_buckets_n30']} buckets n≥30)")
+        print(f"  Gate 2 (informativo): {'PASSA' if g['gate2_edge_moonshot'] else 'FALHA'}")
+        print(f"  DECISÃO: painel |y|≤2,0+guarda = {'ADOTA' if adota else 'NÃO ADOTA'}")
+        g["decisao_v13_adota_ymax2"] = adota
+        with open("output/gates_v13.json", "w") as f:
+            json.dump(g, f, indent=1)
+        _os.environ.pop("EVENTCAL_YMAX", None)
     if "--tournament" in sys.argv or len(sys.argv) == 1:
         panel = ev_engine.load_panel()
         out = tournament(panel)

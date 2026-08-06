@@ -137,12 +137,14 @@ def build_universe(start, end):
 
     tickers = {}
     n_filtered_mcap = 0
+    n_filtered_ascii = 0  # v13: exclusões deixam de ser silenciosas — tudo contado
     for row in raw:
         tk = row["ticker"]
         if not tk or not tk.isascii():
+            n_filtered_ascii += 1
             continue
-        # filtro de elegibilidade fixo (metodologia v5): mcap conhecido < MIN_MCAP -> fora
-        if row.get("mcap") is not None and row["mcap"] < config.MIN_MCAP:
+        # v13: piso de mcap removido (decisão do utilizador; MIN_MCAP=0 desativa)
+        if config.MIN_MCAP and row.get("mcap") is not None and row["mcap"] < config.MIN_MCAP:
             n_filtered_mcap += 1
             continue
         cur = tickers.setdefault(tk, {"date": row["date"], "timing": row["timing"],
@@ -160,6 +162,7 @@ def build_universe(start, end):
         "raw_rows": len(raw),
         "n_tickers": len(tickers),
         "n_filtered_mcap": n_filtered_mcap,
+        "n_filtered_ascii": n_filtered_ascii,
         "min_mcap": config.MIN_MCAP,
         "nasdaq_failed_days": nasdaq_failed,
     }

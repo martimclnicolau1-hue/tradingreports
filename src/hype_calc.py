@@ -30,7 +30,8 @@ def main():
     if os.path.exists("data/optclean.json"):
         optclean = json.load(open("data/optclean.json"))
 
-    horizon = [(date.today() + timedelta(days=d)).isoformat() for d in range(0, 4)]
+    horizon = [(date.today() + timedelta(days=d)).isoformat()
+               for d in range(0, getattr(config, "SCOPE_DAYS", 3) + 1)]
     scope = df.event_date.isin(horizon)
     print(f"Hype: a calcular para {scope.sum()} candidatos (eventos até T+3)")
 

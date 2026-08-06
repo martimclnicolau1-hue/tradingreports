@@ -125,7 +125,8 @@ def bundle_signals():
 
 def main():
     df = pd.read_csv("output/candidatos.csv")
-    horizon = [(date.today() + timedelta(days=d)).isoformat() for d in range(0, 4)]
+    horizon = [(date.today() + timedelta(days=d)).isoformat()
+               for d in range(0, getattr(config, "SCOPE_DAYS", 3) + 1)]
     scope = df.event_date.isin(horizon)
     print(f"Arquivo de chains: {scope.sum()} candidatos (eventos até T+3)")
     cpivs, oss = [], []

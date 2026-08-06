@@ -28,7 +28,9 @@ ENRICH_TOP_N = 100            # v6: opções só para o top-N do pré-score (cus
 RECALL_MIN_UNIVERSE = 50      # v11: gate de recall (warn-only) — universo abaixo disto = suspeita
 RADAR_MIN_LOG_DVOL = 7.0      # v11: piso de liquidez do Radar (≈$10M/dia) — execução, não alfa
 ALWAYS_ENRICH = ["LLY", "SE", "DLO", "ONON", "INOD", "CELH", "APP", "ROKU"]
-MIN_MCAP = 500e6              # filtro de elegibilidade fixado na metodologia v5
+MIN_MCAP = 0                  # v13: piso REMOVIDO por decisão do utilizador (v5§2 nunca teve
+                              # evidência; CLRO-class entra e fica visível como Estreante)
+SCOPE_DAYS = 3                # v13: âmbito unificado (enriquecimento/chains/hype) — antes divergia T+2 vs T+3
 
 # Fallback manual (usado só se todas as fontes de calendário falharem)
 UNIVERSE_FALLBACK = [

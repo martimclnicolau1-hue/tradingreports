@@ -112,10 +112,21 @@ def build_panel():
         for k in range(len(events)-4):  # precisa de >=4 eventos de história (k+1..fim)
             ev = events[k]
             if ev is None: continue
-            if abs(ev["reaction"]) > 1.0:
-                # v11: logar cada descarte — evidência para rever o filtro na v12
-                print(f"[build_panel] descartado |y|>1: {sym} {ev['date']} y={ev['reaction']:+.2f}")
+            # v13: limiar parametrizado (braço B do tribunal usa EVENTCAL_YMAX=2.0);
+            # entre 1,0 e YMAX só entra com guarda de sanidade (preço/volume válidos
+            # nos 2 dias — apanha artefactos de dados sem matar movers reais >100%)
+            y_max = float(os.environ.get("EVENTCAL_YMAX", "1.0"))
+            ay = abs(ev["reaction"])
+            if ay > y_max:
+                print(f"[build_panel] descartado |y|>{y_max}: {sym} {ev['date']} y={ev['reaction']:+.2f}")
                 n_bad_y += 1; continue
+            if ay > 1.0:
+                b_ = ev["i_before"]
+                guard = (closes[b_] > 0.5 and b_ + 1 < len(closes) and closes[b_ + 1] > 0.5
+                         and (volumes is None or (volumes[b_] > 0 and volumes[b_ + 1] > 0)))
+                if not guard:
+                    print(f"[build_panel] descartado |y|>1 SEM guarda: {sym} {ev['date']} y={ev['reaction']:+.2f}")
+                    n_bad_y += 1; continue
             hist = [e for e in events[k+1:] if e is not None]
             if len(hist) < 4: continue
             b = ev["i_before"]

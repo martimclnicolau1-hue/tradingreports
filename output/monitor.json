@@ -8,20 +8,20 @@
   },
   {
    "tripwire": "lift_morto",
-   "detalhe": "precision@3 0.069 / base 0.030 = 2.28×"
+   "detalhe": "precision@3 0.068 / base 0.031 = 2.24×"
   },
   {
    "tripwire": "espinha_morta",
-   "detalhe": "TOP-3 atual 0.0397 | anterior None (precisa 2 consecutivos ≤0)"
+   "detalhe": "TOP-3 atual 0.0364 | anterior 0.0397 (precisa 2 consecutivos ≤0)"
   },
   {
    "tripwire": "cobertura",
-   "detalhe": "0.793 vs alvo [0,75; 0,85]"
+   "detalhe": "0.794 vs alvo [0,75; 0,85]"
   }
  ],
  "any_tripped": false,
  "regime": {
-  "frac_acima_habito": 0.32,
+  "frac_acima_habito": 0.28,
   "n": 50,
   "ate": "2026-08-05",
   "label": "VENDEDOR"

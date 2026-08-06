@@ -36,7 +36,9 @@ def load_panel(rebuild=False):
     except FileNotFoundError:
         p = build_panel()
         p.to_csv("output/factor_panel.csv", index=False)
-    p = p[p.y.notna() & (p.y.abs() <= 1.0)].reset_index(drop=True)
+    import os as _os
+    y_max = float(_os.environ.get("EVENTCAL_YMAX", "1.0"))  # v13: coerente com build_panel
+    p = p[p.y.notna() & (p.y.abs() <= y_max)].reset_index(drop=True)
     return p
 
 

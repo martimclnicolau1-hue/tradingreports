@@ -28,7 +28,7 @@ def p_rn_from_chain(snap, spot):
     if len(c) < 4:
         return np.nan
     c["mid"] = (c.bid + c.ask) / 2
-    c = c[(c.ask - c.bid) / c.mid <= 0.30]      # filtro de liquidez pré-registado
+    c = c[(c.ask - c.bid) / c.mid <= 0.30]      # filtro de liquidez (registado na metodologia v13§4)
     if len(c) < 2:
         return np.nan
     k1_t, k2_t = 1.15 * spot, 1.25 * spot

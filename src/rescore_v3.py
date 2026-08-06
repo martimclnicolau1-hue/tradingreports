@@ -45,16 +45,5 @@ df["score_v3"] = df.apply(v3, axis=1).round(1)
 df["veto_v3"] = df.apply(veto, axis=1)
 df.to_csv("output/candidatos.csv", index=False)
 
-lines = ["", "## Ranking v3 (pós-estudo de fatores; ver metodologia v3) — topo por dia, vetados excluídos", "",
-         "| Dia | 1º elegível | v3 | 2º elegível | v3 | Vetados no topo (motivo) |", "|---|---|---|---|---|---|"]
-for day, g in df.dropna(subset=["event_date"]).groupby("event_date"):
-    g = g.sort_values("score_v3", ascending=False)
-    el = g[g.veto_v3 == ""]
-    vets = "; ".join(f"{r.ticker} ({r.veto_v3})" for _, r in g[g.veto_v3 != ""].head(3).iterrows()) or "—"
-    a = f"{el.iloc[0].ticker}" if len(el) else "—"; av = f"{el.iloc[0].score_v3}" if len(el) else "—"
-    b = f"{el.iloc[1].ticker}" if len(el) > 1 else "—"; bv = f"{el.iloc[1].score_v3}" if len(el) > 1 else "—"
-    lines.append(f"| {day} | **{a}** | {av} | {b} | {bv} | {vets} |")
-with open("/dev/null", "a") as f:
-    f.write("\n".join(lines) + "\n")
 print(df.dropna(subset=["event_date"]).sort_values("score_v3", ascending=False)[
     ["ticker","event_date","score","score_v3","veto_v3","dist_52w_high","rsi14","edge_ratio"]].head(20).to_string(index=False))

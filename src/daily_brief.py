@@ -103,8 +103,10 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
     if has_p20:
         pool_all = opp[opp.p_up20_cal.notna()]
         radar_pool = pool_all[pool_all.log_dollar_vol >= floor] if has_ldv else pool_all
-        radar_out = (pool_all[pool_all.log_dollar_vol < floor] if has_ldv
-                     else pool_all.iloc[0:0]).nlargest(3, "p_up20_cal")
+        # v13: "nunca silencioso" a sério — top-10 nomeados + contagem do resto
+        radar_below = (pool_all[pool_all.log_dollar_vol < floor] if has_ldv
+                       else pool_all.iloc[0:0])
+        radar_out = radar_below.nlargest(10, "p_up20_cal")
     else:
         radar_pool = radar_out = opp.iloc[0:0]
 
@@ -181,6 +183,9 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
                 avisos.append("⚠ data do evento não confirmada por 2ª fonte")
             if pick.get("timing") == "?":
                 avisos.append("⚠ timing (AMC/BMO) não confirmado")
+            pm = pick.get("pct_missing")
+            if pd.notna(pm) and pm > 0.40:  # v13: ressurreição da regra v1§1
+                avisos.append(f"⚠ dados incompletos ({100*pm:.0f}% dos campos em falta)")
             if avisos:
                 a("*" + " · ".join(avisos) + "*")
             if not selo:
@@ -207,13 +212,16 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
         a("| Ticker | Timing | P(≥+20%) | EV | Intervalo 80% | $/dia | 🚩 Flags |")
         a("|---|---|---|---|---|---|---|")
         for _, r in radar.iterrows():
-            a(f"| {r.ticker} | {r.get('timing','?')} | **{100*r.p_up20_cal:.0f}%** "
+            exp_flag = " ⏳" if r.get("monthly_expiry_flag") is True else ""
+            a(f"| {r.ticker}{exp_flag} | {r.get('timing','?')} | **{100*r.p_up20_cal:.0f}%** "
               f"| {100*r.gbm_ev:+.1f}% | [{100*r.gbm_q10:+.1f}%; {100*r.gbm_q90:+.1f}%] "
               f"| {_dvol_str(r.get('log_dollar_vol'))} | {r['veto_flags'] or '—'} |")
         if len(radar_out):
             fora = ", ".join(f"{r.ticker} ({100*r.p_up20_cal:.0f}%, {_dvol_str(r.get('log_dollar_vol'))}/dia)"
                              for _, r in radar_out.iterrows())
-            a(f"*Fora do Radar por liquidez (<{_dvol_str(floor)}/dia): {fora}.*")
+            resto = len(radar_below) - len(radar_out)
+            a(f"*Fora do Radar por liquidez (<{_dvol_str(floor)}/dia): {fora}"
+              + (f" — e mais {resto} abaixo destes" if resto > 0 else "") + ".*")
         a(f"*v11: as flags forenses (🚩Altman/SBC/accruals/beat&fell) deixaram de excluir do Radar "
           f"— são risco visível, não proibição; a cabeça continua a exigir zero flags. Decisão "
           f"documentada na metodologia (não testável sem fundamentais point-in-time). Probabilidades "
@@ -231,6 +239,31 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
           "condicional a sobrevivência) e a PRÓXIMA data de report na cache (confirmar no IR). "
           "Entram no brief quando a janela de 7 dias os apanhar — ex.: PLTR reporta em novembro; "
           "não aparecer hoje é calendário, não filtro.*")
+
+    # v13: ESTREANTES — visibilidade sem previsão (IPOs/histórico curto; antes invisíveis)
+    rookies = opp[opp.gbm_ev.isna()] if "gbm_ev" in opp.columns else opp.iloc[0:0]
+    if len(rookies):
+        def _mcap(t):
+            try:
+                mc = json.load(open(f"data/info_{t}.json"))["data"].get("marketCap")
+                return float(mc) if mc else float("nan")
+            except Exception:
+                return float("nan")
+        rk = rookies.copy()
+        rk["_mcap"] = [_mcap(t) for t in rk.ticker]
+        rk = rk.sort_values("_mcap", ascending=False)
+        a("\n## 🌱 Estreantes — na janela mas sem score (história insuficiente para o modelo)")
+        a("| Ticker | Timing | Mcap | Implied move | 🚩 Flags |")
+        a("|---|---|---|---|---|")
+        for _, r in rk.head(10).iterrows():
+            mc = r["_mcap"]
+            mc_s = "—" if pd.isna(mc) else (f"${mc/1e9:.1f}B" if mc >= 1e9 else f"${mc/1e6:.0f}M")
+            im = f"{100*r.implied_move_pct:.1f}%" if pd.notna(r.get("implied_move_pct")) else "—"
+            a(f"| {r.ticker} | {r.get('timing','?')} | {mc_s} | {im} | {r['veto_flags'] or '—'} |")
+        if len(rk) > 10:
+            a(f"*…e mais {len(rk)-10} estreantes na janela.*")
+        a("*Sem score = <4 reports prévios ou <1 ano de preços — o modelo não prevê sem história "
+          "(v13§2); visibilidade sem previsão fabricada. Modelo para estreantes: candidato v14.*")
 
     a("\n---\n\n## ANEXO — detalhe completo (podes parar de ler aqui)")
 
