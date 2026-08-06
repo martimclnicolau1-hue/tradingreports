@@ -126,10 +126,11 @@ def main():
     # quote — desacopla o custo (top-N) da elegibilidade de display ("custo, não critério")
     cut = (config.WINDOW_START + timedelta(days=getattr(config, "SCOPE_DAYS", 3))).isoformat()
     scope = [r for r in ranked if r["event_date"] and r["event_date"] <= cut]
-    if len(scope) > 300:
-        print(f"[AVISO] âmbito exibível com {len(scope)} tickers > cap 300 — "
-              f"enriquecidos só os 300 melhores do pré-score")
-    enrich |= {r["ticker"] for r in scope[:300]}
+    cap = getattr(config, "ENRICH_SCOPE_CAP", 650)
+    if len(scope) > cap:
+        print(f"[AVISO] âmbito exibível com {len(scope)} tickers > cap {cap} — "
+              f"enriquecidos só os {cap} melhores do pré-score")
+    enrich |= {r["ticker"] for r in scope[:cap]}
     print(f"\nPassagem 2 (opções): {len(enrich & {r['ticker'] for r in rows})} tickers")
     by_tkr = {r["ticker"]: r for r in rows}
     for j, tkr in enumerate(sorted(enrich & set(by_tkr)), 1):

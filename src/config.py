@@ -31,6 +31,7 @@ ALWAYS_ENRICH = ["LLY", "SE", "DLO", "ONON", "INOD", "CELH", "APP", "ROKU"]
 MIN_MCAP = 0                  # v13: piso REMOVIDO por decisão do utilizador (v5§2 nunca teve
                               # evidência; CLRO-class entra e fica visível como Estreante)
 SCOPE_DAYS = 3                # v13: âmbito unificado (enriquecimento/chains/hype) — antes divergia T+2 vs T+3
+ENRICH_SCOPE_CAP = 650        # v13.4: cap do âmbito com opções (era 300; disparou com 609 no universo sem piso — custo ~10 min/noite)
 
 # Fallback manual (usado só se todas as fontes de calendário falharem)
 UNIVERSE_FALLBACK = [

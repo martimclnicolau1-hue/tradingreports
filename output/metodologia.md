@@ -754,3 +754,8 @@ BMO de amanhã, **prazo de decisão 21:00 do próprio dia** (~1h de janela de
 ação). Fins-de-semana sem eventos → sem email. Nenhuma mudança de método;
 apenas quando e com que âmbito o Escolhido é entregue. Quotes de opções
 passam a ser intraday ao vivo por construção (vantagem vs pós-fecho).
+
+### NOTA v13.4 — cap de enriquecimento 300→650 (2026-08-06, custo não critério)
+O cap de 300 disparou na 1ª corrida sem piso (âmbito exibível = 609).
+Com os fundamentais em cache, +350 quotes custam ~10 min/noite → cap sobe
+para 650 (ENRICH_SCOPE_CAP no config). Aviso mantém-se se exceder.
