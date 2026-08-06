@@ -74,16 +74,33 @@ def fetch_earnings_dates(symbol, limit=100, force=False):
 
 def fetch_prices(symbol, period="10y", force=False):
     """Histórico diário OHLCV. Devolve (DataFrame, verified).
-    v10: period=10y (o refresh reescreve o CSV — um default curto truncaria a
-    cache aprofundada a cada 24h); force ignora a cache."""
+    v10: period=10y default; force ignora a cache.
+    v14: refresh INCREMENTAL — cache velha ganha só as barras novas (append),
+    em vez de re-descarregar 10 anos por ticker (mata as 4h do runner cloud).
+    Qualquer falha no incremento degrada para o refetch completo antigo."""
     path = _cache_path(f"prices_{symbol}.csv")
     if os.path.exists(path) and not force:
         age_h = (time.time() - os.path.getmtime(path)) / 3600
+        old = pd.read_csv(path, index_col=0)
+        old.index = pd.to_datetime(old.index, utc=True, errors="coerce")
+        old = old[old.index.notna() & old["Close"].notna()]
         if age_h < 24:
-            df = pd.read_csv(path, index_col=0)
-            df.index = pd.to_datetime(df.index, utc=True, errors="coerce")
-            df = df[df.index.notna() & df["Close"].notna()]
-            return df, True
+            return old, True
+        # v14: incremental — buscar só desde a última barra
+        try:
+            if len(old) >= 200:
+                start = (old.index.max() - pd.Timedelta(days=7)).date().isoformat()
+                t = get_ticker(symbol)
+                nov = t.history(start=start, auto_adjust=True)
+                time.sleep(config.REQUEST_SLEEP / 2)
+                if nov is not None and not nov.empty:
+                    nov.index = pd.to_datetime(nov.index, utc=True, errors="coerce")
+                    df = pd.concat([old[old.index < nov.index.min()], nov])
+                    df = df[~df.index.duplicated(keep="last")].sort_index()
+                    df.to_csv(path)
+                    return df[df["Close"].notna()], True
+        except Exception as e:
+            print(f"  [WARN] prices incremental {symbol}: {e} — full refetch")
     try:
         t = get_ticker(symbol)
         df = t.history(period=period, auto_adjust=True)

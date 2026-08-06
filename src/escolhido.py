@@ -17,6 +17,7 @@ from datetime import date, datetime, timedelta
 import pandas as pd
 
 from . import config
+from .daily_brief import _dvol_str
 
 TODAY_MODE = os.environ.get("EVENTCAL_TODAY") == "1"
 
@@ -57,9 +58,26 @@ def build_escolhido(csv_path="output/candidatos.csv", log=True):
         _write(md, T)
         return None
     # v13.2 ADOTADO: EV ajustado ao risco — "mais provável de subir mais COM segurança"
-    # (tribunal 2026-08-06: P(neg) do top-1 56,7%→46,7% com média igual)
     el["rank_escolhido"] = el.gbm_ev / (el.gbm_q90 - el.gbm_q10).clip(lower=1e-6)
-    pick = el.sort_values("rank_escolhido", ascending=False).iloc[0]
+    # v14§1: gates SEM-TRADE — liquidez no pick + limiares mínimos absolutos
+    ldv_min = getattr(config, "RADAR_MIN_LOG_DVOL", 7.0)
+    if "log_dollar_vol" in el.columns:
+        el = el[el.log_dollar_vol.fillna(0) >= ldv_min]
+    el = el.sort_values("rank_escolhido", ascending=False)
+    ra_min = getattr(config, "ESCOLHIDO_RA_MIN", 0.05)
+    ev_min = getattr(config, "ESCOLHIDO_EV_MIN", 0.01)
+    if el.empty or el.iloc[0].rank_escolhido < ra_min or el.iloc[0].gbm_ev < ev_min:
+        top = el.iloc[0] if len(el) else None
+        detalhe = (f"O melhor candidato ({top.ticker}: rácio {top.rank_escolhido:.3f}, "
+                   f"EV {_pct(top.gbm_ev)}) não atinge os mínimos pré-registados "
+                   f"(rácio ≥{ra_min}, EV ≥{_pct(ev_min, 0)})." if top is not None
+                   else "Nenhum candidato líquido e limpo na janela.")
+        md = (f"# NÃO HÁ TRADE HOJE\n\n{detalhe}\n\nProibido forçar o melhor de um dia "
+              f"mau (metodologia v14§1) — dias sem trade são informação, não falha. "
+              f"O brief completo com todos os candidatos está no arquivo local.")
+        _write(md, T)
+        return None
+    pick = el.iloc[0]
     i = _info(pick.ticker)
     nome = i.get("shortName") or pick.ticker
     setor = i.get("sector") or "—"
@@ -182,6 +200,20 @@ def build_escolhido(csv_path="output/candidatos.csv", log=True):
         a(f"- ⚠ {_pct(pick.pct_missing, 0)} dos campos de dados em falta — leitura menos fiável.")
     if not pick.get("date_verified"):
         a("- ⚠ Data do evento não confirmada por 2ª fonte — confirmar no IR.")
+
+    # v14§2-3: fricção estimada + plano de execução configurado
+    ldv = pick.get("log_dollar_vol")
+    fric = None
+    for cut, f in getattr(config, "FRICTION_BY_LDV", []):
+        if pd.notna(ldv) and ldv >= cut:
+            fric = f
+            break
+    if fric is not None:
+        a(f"\n## O plano (parâmetros teus, escritos no config)")
+        a(f"- **EV líquido estimado: {_pct(pick.gbm_ev - fric)}** (EV {_pct(pick.gbm_ev)} − "
+          f"fricção ~{100*fric:.1f}pp para a liquidez desta ação, {_dvol_str(ldv)}/dia; "
+          f"haircut declarado, não calibrado — o ledger vai medi-lo)")
+        a(f"- {getattr(config, 'PLANO_EXECUCAO', '')}")
 
     a("\n---")
     a("*REGRA DE MEDIÇÃO (paridade backtest-live): o desfecho do sistema mede-se "

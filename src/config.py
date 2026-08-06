@@ -33,6 +33,15 @@ MIN_MCAP = 0                  # v13: piso REMOVIDO por decisão do utilizador (v
 SCOPE_DAYS = 3                # v13: âmbito unificado (enriquecimento/chains/hype) — antes divergia T+2 vs T+3
 ENRICH_SCOPE_CAP = 650        # v13.4: cap do âmbito com opções (era 300; disparou com 609 no universo sem piso — custo ~10 min/noite)
 
+# v14 (metodologia v14§1-3): limiares SEM-TRADE + fricção + plano de execução
+ESCOLHIDO_RA_MIN = 0.05       # rácio EV/largura mínimo — abaixo = "NÃO HÁ TRADE HOJE"
+ESCOLHIDO_EV_MIN = 0.01       # EV mínimo absoluto (+1,0%)
+FRICTION_BY_LDV = [(8.0, 0.001), (7.0, 0.004)]  # fricção estimada: ldv≥8→10bps; 7-8→40bps
+PLANO_EXECUCAO = ("Risco 0,5-1% da carteira por evento (posição típica 4-6% do book) · "
+                  "janela de entrada 20:45-20:55 Lisboa, ordem limite · "
+                  "saída PRÉ-COMPROMETIDA: fecho da sessão seguinte (a régua do backtest) · "
+                  "regista o fill real no ledger")  # parâmetros DO UTILIZADOR (v14§3)
+
 # Fallback manual (usado só se todas as fontes de calendário falharem)
 UNIVERSE_FALLBACK = [
     # nomes do scan do utilizador
