@@ -8,7 +8,9 @@ em anos). Var diária difusiva σd² = (TV_b−TV_f)/(Tb−Tf). Var do evento
 """
 import json, math, time, warnings
 warnings.filterwarnings("ignore")
-import numpy as np, pandas as pd, yfinance as yf
+import numpy as np, pandas as pd
+
+from . import fetch
 
 def atm_iv(chain, spot):
     ivs = []
@@ -21,7 +23,7 @@ def atm_iv(chain, spot):
     return np.mean(ivs) if ivs else None
 
 def analyze(sym):
-    t = yf.Ticker(sym)
+    t = fetch.get_ticker(sym)
     try:
         exps = t.options
         if not exps or len(exps) < 2: return {}

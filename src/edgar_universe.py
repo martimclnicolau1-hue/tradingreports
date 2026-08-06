@@ -19,6 +19,7 @@ Uso: .venv/bin/python -m src.edgar_universe
 import gzip
 import json
 import os
+import subprocess
 import time
 
 import pandas as pd
@@ -29,7 +30,7 @@ from . import config
 HDR = {"User-Agent": config.SEC_USER_AGENT, "Accept-Encoding": "gzip"}
 IDX_DIR = "data/edgar/idx"
 OUT = "data/edgar/universe_2019_2025.csv.gz"
-CKPT = "data/edgar/crawl_checkpoint.json"
+CKPT = "data/edgar/crawl_checkpoint.json.gz"
 YEARS = range(2019, 2026)
 SLEEP = 0.13  # ~7,7 req/s — abaixo do teto de 10 da SEC
 
@@ -51,6 +52,13 @@ def _get(url, retries=5):
             continue
         if r.status_code == 404:
             return None
+        if r.status_code >= 500:
+            # v15.2e: 502/503 esporádicos do SEC matavam o crawl aos 10k CIKs —
+            # tratam-se como queda de rede (backoff), nunca como erro fatal
+            wait = min(60 * (2 ** i), 900)
+            print(f"  [{r.status_code}] pausa {wait}s ({url[-40:]})")
+            time.sleep(wait)
+            continue
         r.raise_for_status()
         time.sleep(SLEEP)
         return r
@@ -109,8 +117,28 @@ def _scan_filings(rec, cik, out, death):
                     "timing": timing, "accession": accn[i] if i < len(accn) else ""})
 
 
+def _save_ckpt(done, rows, meta, death):
+    """v15.2c: checkpoint gzipado (fica <100MB) e COMMITADO — o crawl
+    sobrevive à morte do container, não só a quedas de rede (v15.1).
+    Falhas de git nunca matam o crawl; falha de push é reportada."""
+    with gzip.open(CKPT, "wt") as f:
+        json.dump({"done": sorted(done), "rows": rows, "meta": meta,
+                   "death": {str(k): v for k, v in death.items()}}, f)
+    for cmd in (["git", "add", "-A", "data/edgar"],
+                ["git", "-c", "user.name=edgar-crawl", "-c", "user.email=routine@cloud",
+                 "commit", "-m", "edgar: checkpoint do crawl v15-P2"],
+                ["git", "pull", "--rebase", "--autostash"],
+                ["git", "push"]):
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+            if r.returncode != 0 and cmd[-1] == "push":
+                print(f"  [aviso] push do checkpoint falhou: {(r.stderr or '').strip()[-200:]}")
+        except Exception as e:
+            print(f"  [aviso] git do checkpoint: {e}")
+
+
 def crawl(ciks):
-    ck = json.load(open(CKPT)) if os.path.exists(CKPT) else {"done": [], "rows": [], "meta": {}, "death": {}}
+    ck = json.load(gzip.open(CKPT, "rt")) if os.path.exists(CKPT) else {"done": [], "rows": [], "meta": {}, "death": {}}
     done = set(ck["done"])
     death = {int(k): v for k, v in ck["death"].items()}
     rows, meta = ck["rows"], ck["meta"]
@@ -135,11 +163,8 @@ def crawl(ciks):
                 print(f"  [WARN] CIK {cik}: {e}")
         done.add(cik)
         if n % 500 == 0:
-            json.dump({"done": sorted(done), "rows": rows, "meta": meta,
-                       "death": {str(k): v for k, v in death.items()}}, open(CKPT, "w"))
+            _save_ckpt(done, rows, meta, death)
             print(f"  checkpoint {n}/{len(todo)} — {len(rows)} eventos 2.02")
-    json.dump({"done": sorted(done), "rows": rows, "meta": meta,
-               "death": {str(k): v for k, v in death.items()}}, open(CKPT, "w"))
     df = pd.DataFrame(rows)
     if not df.empty:
         df["name"] = df.cik.map(lambda c: (meta.get(str(c)) or {}).get("name"))
@@ -149,6 +174,7 @@ def crawl(ciks):
             df[f"death_{k}"] = df.cik.map(lambda c: death.get(c, {}).get(k, 0))
         with gzip.open(OUT, "wt") as f:
             df.to_csv(f, index=False)
+    _save_ckpt(done, rows, meta, death)  # v15.2e: DEPOIS do CSV — o commit final leva o universo
     print(f"UNIVERSO CANÓNICO: {len(df)} eventos 8-K 2.02 (2019-2025) de "
           f"{df.cik.nunique() if not df.empty else 0} empresas | "
           f"AMC {int((df.timing=='AMC').sum())} · BMO {int((df.timing=='BMO').sum())} · "
