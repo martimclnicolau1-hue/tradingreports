@@ -100,6 +100,7 @@ def tournament(panel, feats=None, include_knn=True, out_path="output/gbm_validat
 
     res = {"gbm": {"top1": [], "top3": [], "all_pred": [], "all_real": []},
            "knn": {"top1": [], "top3": [], "all_pred": [], "all_real": []}}
+    ra_top1, ra_top3 = [], []  # v13.2: regra B (risk-adjusted) do Escolhido
     meta_pairs, meta_pairs20 = [], []
     d5 = {"picks": 0, "hits": 0, "pos": 0}    # top-3 diários por p_up5 (baseline captura)
     d20 = {"picks": 0, "hits": 0, "pos": 0}   # top-3 diários por p_up20
@@ -139,6 +140,12 @@ def tournament(panel, feats=None, include_knn=True, out_path="output/gbm_validat
         lo, hi = q10.predict(Xte_f) - qhat, q90.predict(Xte_f) + qhat
         cover_hits += int(((yte >= lo) & (yte <= hi)).sum())
         cover_n += len(yte)
+
+        # v13.2: regra B do Escolhido — EV ajustado ao risco (gbm_ev ÷ largura conformal)
+        pred_ra = pred / np.maximum(hi - lo, 1e-6)
+        order_ra = np.argsort(pred_ra)[::-1]
+        ra_top1.append(float(yte[order_ra[0]]))
+        ra_top3.append(float(yte[order_ra[:3]].mean()))
 
         # meta-confiança v8: P(y>=+5%) calibrada no treino
         clf5 = _fit_calibrated(Xtr_f, (ytr >= BIG_UP).astype(int))
@@ -229,6 +236,23 @@ def tournament(panel, feats=None, include_knn=True, out_path="output/gbm_validat
         "capture_daily_p5_baseline": round(d5["hits"] / d5["pos"], 4) if d5["pos"] else None,
         "picks": d20["picks"],
     }
+    # v13.2: comparação das regras do Escolhido (A = gbm_ev; B = risk-adjusted)
+    if ra_top1 and res["gbm"]["top1"]:
+        A1, B1 = np.array(res["gbm"]["top1"]), np.array(ra_top1)
+        diffs = B1 - A1
+        out["escolhido"] = {
+            "A_top1_mean": round(float(A1.mean()), 4), "B_top1_mean": round(float(B1.mean()), 4),
+            "A_top1_p_neg": round(float((A1 < 0).mean()), 3), "B_top1_p_neg": round(float((B1 < 0).mean()), 3),
+            "A_top1_downside": round(float(A1[A1 < 0].mean()), 4) if (A1 < 0).any() else 0.0,
+            "B_top1_downside": round(float(B1[B1 < 0].mean()), 4) if (B1 < 0).any() else 0.0,
+            "B_top3_mean": round(float(np.mean(ra_top3)), 4),
+            "diff_mean": round(float(diffs.mean()), 4),
+            "diff_se": round(float(diffs.std() / np.sqrt(len(diffs))), 4),
+        }
+        e = out["escolhido"]
+        # gates v13.2 (segurança primeiro): P(neg) desce E média não degrada >1·SE
+        e["adota_B"] = bool(e["B_top1_p_neg"] < e["A_top1_p_neg"]
+                            and e["diff_mean"] >= -e["diff_se"])
     if out["knn"] is not None and out["gbm"] is not None:
         out["winner_top3"] = "gbm" if out["gbm"]["top3_mean"] >= out["knn"]["top3_mean"] else "knn"
     with open(out_path, "w") as f:

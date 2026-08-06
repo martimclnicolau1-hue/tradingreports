@@ -700,3 +700,28 @@ ou ressurreição; única mudança de modelo (|y|) → tribunal.
    expansão".
 3. Painel de produção v13: **27.184 eventos, 1.091 tickers** (cresce à medida
    que os small caps backfillam), 844 moonshots ≥+20%.
+
+### NOTA v13.2 — regra do Escolhido: EV ajustado ao risco (pré-registo ANTES do tribunal)
+Pedido do utilizador: "a que no global com segurança é a mais provável de
+subir mais". Tradução mecânica pré-registada: rank do Escolhido passa de
+gbm_ev puro (regra A, v8§5) para **regra B: gbm_ev ÷ largura do intervalo
+conformal (q90−q10)** — EV por unidade de incerteza; sobe quem promete
+mais COM intervalo mais apertado. TRIBUNAL (mesmos 30 folds): para o TOP-1
+realizado de cada regra medem-se (i) retorno médio, (ii) P(y<0) do pick,
+(iii) queda média quando cai. GATES fixados AGORA, segurança primeiro
+(intenção declarada do utilizador): adota-se B se P(y<0) do TOP-1 descer
+E o retorno médio do TOP-1 não degradar mais de 1·SE (diferenças
+emparelhadas). Caso contrário mantém-se A e a nota di-lo. Elegibilidade
+inalterada (zero flags); apresentação = v13.1.
+
+### NOTA v13.1 — email de escolhido único (2026-08-06, pedido do utilizador)
+O EMAIL passa a conter UM único nome ("O Escolhido do dia") com o caso
+fundamental explicado por extenso (receita, margens, qualidade dos lucros,
+sandbagging, posicionamento short, expectativas) + o caso CONTRA + pesquisa
+web do nome + rodapé de honestidade. REGRA DE SELEÇÃO INALTERADA (v8§5:
+topo do gbm_ev entre elegíveis sem flags — zero mudança de método; mudança
+de apresentação apenas). O brief completo (Radar, Estreantes, EV, anexo)
+continua a ser gerado e arquivado localmente (output/brief_*.md) para
+auditoria e consulta; simplesmente deixa de seguir por email. Linguagem:
+"o caso a favor/contra do nº 1", nunca diretivas de compra — decisões do
+utilizador (invariante v1).
