@@ -24,6 +24,7 @@ FEATS_V10 = [f for f in FEATS if f != "log_mcap"] + ["log_close", "log_dollar_vo
 FEATS = FEATS_V10  # ADOTADO — tribunal v10 2026-08-05, gates 1∧2∧3 (ver metodologia)
 # v12 braço B: + short-sale volume FINRA (PIT desde 2018-08; metodologia v12§2)
 FEATS_V12 = FEATS + ["short_ratio_z5", "short_ratio_z20"]
+FEATS = FEATS_V12  # ADOTADO — tribunal v12 2026-08-06, Gate 1 (spread passa 2-SE, t=4,61)
 GBM_PARAMS = dict(max_iter=300, learning_rate=0.05, max_depth=4,
                   l2_regularization=1.0, random_state=42)
 N_FOLDS = 30
@@ -315,6 +316,13 @@ def score_candidates(csv_path="output/candidatos.csv", feats=None):
         d.update({"vix": vix_today, "dow": dow,
                   "is_amc": 1 if r.get("timing") == "AMC" else 0,
                   "n_events_same_day": float(r.get("_n_same_day") or 0)})
+        if "short_ratio_z5" in feats:  # v12: FINRA ao vivo (senão herdava a mediana)
+            try:
+                from . import finra_short
+                z5, z20 = finra_short.live_z(r.ticker)
+                d.update({"short_ratio_z5": z5, "short_ratio_z20": z20})
+            except Exception:
+                pass
         vec = [d.get(f) for f in feats]
         v = np.array([np.nan if x is None else float(x) for x in vec])
         v = np.where(np.isnan(v), med, v).reshape(1, -1)

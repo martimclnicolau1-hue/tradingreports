@@ -96,6 +96,24 @@ def _load_ratios():
     return _RATIOS
 
 
+def _z_pair(h):
+    """(z5, z20) da série de ratios h (últimos 5/20 dias vs base de 120)."""
+    if h is None or len(h) < 60:
+        return np.nan, np.nan
+    base = h.tail(120)
+    mu, sd = base.mean(), base.std()
+    if not sd or np.isnan(sd) or sd == 0:
+        return np.nan, np.nan
+    return (float((h.tail(5).mean() - mu) / sd),
+            float((h.tail(20).mean() - mu) / sd))
+
+
+def live_z(sym):
+    """z-scores 'a partir de agora' para scoring de candidatos (v12: sem isto,
+    o candidato herdava a mediana do painel — feature morta ao vivo)."""
+    return _z_pair(_load_ratios().get(sym))
+
+
 def attach_features(panel):
     """Acrescenta short_ratio_z5 / short_ratio_z20 ao painel, PIT: usa APENAS
     dias estritamente ANTERIORES a event_date. NaN quando não há dados (o GBM
@@ -106,15 +124,8 @@ def attach_features(panel):
         s = ratios.get(sym)
         if s is None:
             z5s.append(np.nan); z20s.append(np.nan); continue
-        h = s[s.index < ev]
-        if len(h) < 60:
-            z5s.append(np.nan); z20s.append(np.nan); continue
-        base = h.tail(120)
-        mu, sd = base.mean(), base.std()
-        if not sd or np.isnan(sd) or sd == 0:
-            z5s.append(np.nan); z20s.append(np.nan); continue
-        z5s.append(float((h.tail(5).mean() - mu) / sd))
-        z20s.append(float((h.tail(20).mean() - mu) / sd))
+        z5, z20 = _z_pair(s[s.index < ev] if s is not None else None)
+        z5s.append(z5); z20s.append(z20)
     panel["short_ratio_z5"] = z5s
     panel["short_ratio_z20"] = z20s
     return panel

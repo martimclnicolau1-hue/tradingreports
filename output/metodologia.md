@@ -587,9 +587,33 @@ REGRAS FIXADAS AGORA (decisão do utilizador: Fases A+B; C em roadmap):
    2026-07-15, via Query API particionada), tripwires TODOS VERDES na
    corrida baseline. ΔOI ativa aos 6 snapshots de arquivo; pctile do
    implied move aos 8.
-5. **Pendentes:** backfill FINRA diário (em curso) → rebuild do painel →
-   TRIBUNAL v12 (braços A/B); 1º snapshot de estimativas (em curso —
-   o painel PIT de consenso nasce hoje).
+5. **Snapshot de estimativas nº 1**: 1.039 tickers, 91 colunas, 982 com
+   consenso EPS 0q — o painel PIT de consenso existe desde 2026-08-06.
+
+### ADENDA v12-tribunal — FINRA (2026-08-06, madrugada)
+Painel reconstruído: 26.073 eventos, 1.034 tickers; short_ratio_z5/z20 cobrem
+88% (NaN pré-2018 e símbolos fora do NMS — imputação por mediana do harness).
+- **Braço A (re-baseline 13 feats)**: TOP-3 +3,14%±1,98 | spread +1,07pp
+  **PASSA 2-SE** | t=3,66 | p20 precision 6,97% (2,3× base).
+- **Braço B (15 = +FINRA)**: TOP-3 +3,64%±2,07 | spread +0,99pp PASSA 2-SE |
+  **t=4,61** | TOP-1 +1,20% vs +0,11%.
+- **MARCO**: primeira vez que o spread quintílico do GBM passa o teste 2-SE
+  (em AMBOS os braços) — o rótulo "spread indistinguível de ruído" cai para
+  o motor principal no painel de 26k eventos.
+- Gate 1: PASSA (+0,503pp, SE 1,521) → **FEATS_V12 ADOTADO** (a partir desta
+  noite o scoring computa FINRA ao vivo — live_z; sem isso a feature morreria
+  na mediana). Gate 3: PASSA.
+- **Gate 2: FALHA — aviso amarelo declarado**: no painel novo, ordenar por
+  p20 já não captura mais moonshots que ordenar por p5 (28,5% vs 29,8%,
+  empate estatístico; na v10 era 29,1% vs 27,8%). DESAMBIGUAÇÃO FIXADA
+  AGORA: o Gate 2 rege ADOÇÕES novas de cabeças; a continuidade de uma
+  cabeça já adotada rege-se pelos TRIPWIRES (§4 — lift atual 2,2×, verde).
+  O Radar mantém-se (valor de display: probabilidades de cauda calibradas +
+  flags, que o ranking p5 não comunica); se o lift cair ≤1×, o tripwire
+  remove-o automaticamente. Candidato v13: reavaliar o ranking do Radar
+  (p20 vs p5 vs blend) em tribunal próprio.
+- gbm_validation.json = braço B (o brief audita o motor em produção);
+  SKILL noturno ganha o update incremental FINRA (segundos/dia).
 
 ---
 
