@@ -165,7 +165,6 @@ def crawl(ciks):
         if n % 500 == 0:
             _save_ckpt(done, rows, meta, death)
             print(f"  checkpoint {n}/{len(todo)} — {len(rows)} eventos 2.02")
-    _save_ckpt(done, rows, meta, death)
     df = pd.DataFrame(rows)
     if not df.empty:
         df["name"] = df.cik.map(lambda c: (meta.get(str(c)) or {}).get("name"))
@@ -175,6 +174,7 @@ def crawl(ciks):
             df[f"death_{k}"] = df.cik.map(lambda c: death.get(c, {}).get(k, 0))
         with gzip.open(OUT, "wt") as f:
             df.to_csv(f, index=False)
+    _save_ckpt(done, rows, meta, death)  # v15.2e: DEPOIS do CSV — o commit final leva o universo
     print(f"UNIVERSO CANÓNICO: {len(df)} eventos 8-K 2.02 (2019-2025) de "
           f"{df.cik.nunique() if not df.empty else 0} empresas | "
           f"AMC {int((df.timing=='AMC').sum())} · BMO {int((df.timing=='BMO').sum())} · "
