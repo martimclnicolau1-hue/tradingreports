@@ -93,9 +93,42 @@ def tripwires():
     return out
 
 
+def settle_picks():
+    """v13.5: preenche o y realizado dos escolhidos (fecho-a-fecho, paridade
+    backtest-live) e publica a série ao vivo — o veredito é ao evento ~20."""
+    import pandas as pd
+    path = "data/picks_log.csv"
+    if not os.path.exists(path):
+        return None
+    log = pd.read_csv(path)
+    todo = log[log.y_realizado.isna()]
+    for i, r in todo.iterrows():
+        p = f"data/prices_{r.ticker}.csv"
+        if not os.path.exists(p):
+            continue
+        pr = pd.read_csv(p, index_col=0)
+        pr.index = pd.to_datetime(pr.index, utc=True, errors="coerce").tz_localize(None).normalize()
+        pr = pr[pr["Close"].notna()]
+        day = pd.Timestamp(r.event_date)
+        pos = pr.index.searchsorted(day)
+        b, a = (pos, pos + 1) if r.timing == "AMC" else (pos - 1, pos)
+        if 0 <= b and a < len(pr):
+            # exige que o dia 'a' já tenha fechado (não liquidar eventos futuros)
+            if pr.index[a] <= pd.Timestamp.today().normalize() - pd.Timedelta(days=0):
+                log.loc[i, "y_realizado"] = round(float(pr["Close"].iloc[a] / pr["Close"].iloc[b] - 1), 4)
+    log.to_csv(path, index=False)
+    done = log[log.y_realizado.notna()]
+    if len(done):
+        print(f"Escolhidos liquidados: n={len(done)} | média {100*done.y_realizado.mean():+.2f}% | "
+              f"win-rate {100*(done.y_realizado > 0).mean():.0f}% | "
+              f"(veredito estatístico ao evento ~20; faltam {max(0, 20-len(done))})")
+    return log
+
+
 if __name__ == "__main__":
     r = tripwires()
     print(f"Tripwires: {'⚠ DISPARADOS: ' + str([t['tripwire'] for t in r['tripped']]) if r['any_tripped'] else 'todos verdes ✓'}")
     if r.get("regime"):
         print(f"Regime: {r['regime']['label']} ({r['regime']['frac_acima_habito']:.0%} dos últimos "
               f"{r['regime']['n']} eventos acima do hábito próprio, até {r['regime']['ate']})")
+    settle_picks()

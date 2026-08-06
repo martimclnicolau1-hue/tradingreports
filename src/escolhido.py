@@ -170,6 +170,11 @@ def build_escolhido(csv_path="output/candidatos.csv"):
     a("\n## O caso CONTRA (lê isto antes de decidires)")
     a(f"- Probabilidade de **cair**: ~{_pct(1 - pick.p_up, 0) if pd.notna(pick.get('p_up')) else '≈45%'} — "
       f"e quando cai, a queda média dos análogos é {_pct(pick.get('downside'))}.")
+    if pd.notna(pick.get("ev_ci_lo")) and pd.notna(pick.get("ev_ci_hi")):
+        spans = pick.ev_ci_lo <= 0 <= pick.ev_ci_hi
+        a(f"- IC95 do EV nos 50 análogos: [{_pct(pick.ev_ci_lo)}; {_pct(pick.ev_ci_hi)}]"
+          + (" — **atravessa zero**: o edge DESTE evento isolado não se distingue de nada; "
+             "o sistema paga em série (~20+ eventos), nunca num tiro." if spans else "."))
     a(f"- O intervalo de 80% inclui {_pct(pick.gbm_q10)} — perder isto num dia é cenário normal, não extremo.")
     a(f"- Movimento típico dela em earnings: {_pct(am) if pd.notna(am) else '—'} para QUALQUER lado; "
       f"stops não protegem através de gaps.")
@@ -179,12 +184,31 @@ def build_escolhido(csv_path="output/candidatos.csv"):
         a("- ⚠ Data do evento não confirmada por 2ª fonte — confirmar no IR.")
 
     a("\n---")
+    a("*REGRA DE MEDIÇÃO (paridade backtest-live): o desfecho do sistema mede-se "
+      f"**fecho-a-fecho** — {'do fecho de HOJE ao fecho de AMANHÃ' if pick.timing == 'AMC' else 'do fecho de hoje ao fecho do dia do report'}. "
+      "Sair na abertura ou intradiário quebra a paridade com os números do backtest. "
+      "Este é 1 evento de uma série — o veredito do sistema é ao evento ~20, nunca hoje.*")
     a("*O sistema nomeia o nº 1 pela regra pré-registada e explica porquê — a decisão e o "
       "tamanho são teus. P calibrada = frequência histórica verificada, não convicção. "
       f"Brief completo (Radar, Estreantes, tabelas) em output/brief_{T.isoformat()}.md.*")
 
     md = "\n".join(L)
+    _log_pick(pick, T)
     return _write(md, T)
+
+
+def _log_pick(pick, T):
+    """v13.5: ledger de escolhidos ao vivo — o veredito é ao evento ~20.
+    O monitor mensal preenche o y realizado (fecho-a-fecho) e publica a série."""
+    row = {"asof": T.isoformat(), "ticker": pick.ticker, "event_date": pick.event_date,
+           "timing": pick.timing, "regra": "v13.2_ra",
+           "gbm_ev": round(float(pick.gbm_ev), 4),
+           "p_up5": round(float(pick.p_up5_cal), 4),
+           "p_up20": round(float(pick.p_up20_cal), 4) if pd.notna(pick.get("p_up20_cal")) else None,
+           "q10": round(float(pick.gbm_q10), 4), "q90": round(float(pick.gbm_q90), 4),
+           "y_realizado": None}
+    path = "data/picks_log.csv"
+    pd.DataFrame([row]).to_csv(path, mode="a", header=not os.path.exists(path), index=False)
 
 
 def _write(md, T):

@@ -759,3 +759,24 @@ passam a ser intraday ao vivo por construção (vantagem vs pós-fecho).
 O cap de 300 disparou na 1ª corrida sem piso (âmbito exibível = 609).
 Com os fundamentais em cache, +350 quotes custam ~10 min/noite → cap sobe
 para 650 (ENRICH_SCOPE_CAP no config). Aviso mantém-se se exceder.
+
+### NOTA v13.5 — auditoria externa ao pick NRDS (2026-08-06, contraditório aceite)
+Um auditor externo (via utilizador) atacou a atribuição do Escolhido. Vereditos:
+1. **G1 (colinearidade prior_avg_move × prior_up_big_rate, r=0,77): método
+   ACEITE, conclusão REFUTADA pelo próprio teste proposto** — a substituição
+   CONJUNTA do par dá +3,26pp (não −0,3pp): deltas individuais de features
+   colineares em GBM não somam. A "pólvora" é o motor dominante; o pick nunca
+   dependeu da atribuição (NRDS nº 1 da janela em qualquer caso).
+2. **G2 (sandbag ≠ guide-down): ACEITE por inteiro** — o modelo não distingue
+   pessimismo de mercado de guidance calibrado da gestão; não testável sem
+   guidance histórico (falha de informação; roadmap NLP). Remédio na camada
+   certa: o research noturno passa a testar consenso-vs-guidance e a escrever
+   o aviso "⚠ Guide-down" quando o sandbag negativo for da gestão.
+3. **G3 (mediana e SE do subconjunto): SE ACEITE em cheio** — IC95 dos 50
+   análogos [−3,4%;+4,9%] atravessa zero; o email passa a dizê-lo sempre que
+   acontece. Mediana REFUTADA nos dados: +1,96% > média +1,32% (cauda gorda
+   é a ESQUERDA, pior análogo −63%) — não é perfil carregado pela cauda direita.
+4. Novos por auditoria: regra de medição fecho-a-fecho EXPLÍCITA no email
+   (paridade backtest-live; sair na abertura quebra-a); ledger de escolhidos
+   ao vivo (data/picks_log.csv) liquidado pelo monitor — o veredito da série
+   é ao evento ~20, nunca ao evento 1.

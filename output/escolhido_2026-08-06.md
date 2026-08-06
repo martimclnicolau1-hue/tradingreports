@@ -1,6 +1,6 @@
 # 🎯 O Escolhido — NRDS (NerdWallet, Inc.)
 
-*Communication Services · reporta 06/08 AMC · prazo de decisão: **06/08 às 21:00 de Lisboa** · gerado 2026-08-06 15:43.*
+*Communication Services · reporta 06/08 AMC · prazo de decisão: **06/08 às 21:00 de Lisboa** · gerado 2026-08-06 16:06.*
 
 ## Porque é o nº 1 de hoje
 É o topo do motor entre 116 candidatos limpos do dia: retorno esperado **3.7%**, com **34%** de probabilidade calibrada de subir ≥5% e **7.7%** de subir ≥20%. Em 8 de cada 10 casos históricos análogos, o desfecho ficou entre **-14.4%** e **15.6%** — este intervalo é a régua honesta do risco.
@@ -26,8 +26,10 @@
 
 ## O caso CONTRA (lê isto antes de decidires)
 - Probabilidade de **cair**: ~46% — e quando cai, a queda média dos análogos é -10.6%.
+- IC95 do EV nos 50 análogos: [-3.4%; 4.9%] — **atravessa zero**: o edge DESTE evento isolado não se distingue de nada; o sistema paga em série (~20+ eventos), nunca num tiro.
 - O intervalo de 80% inclui -14.4% — perder isto num dia é cenário normal, não extremo.
 - Movimento típico dela em earnings: 17.4% para QUALQUER lado; stops não protegem através de gaps.
 
 ---
+*REGRA DE MEDIÇÃO (paridade backtest-live): o desfecho do sistema mede-se **fecho-a-fecho** — do fecho de HOJE ao fecho de AMANHÃ. Sair na abertura ou intradiário quebra a paridade com os números do backtest. Este é 1 evento de uma série — o veredito do sistema é ao evento ~20, nunca hoje.*
 *O sistema nomeia o nº 1 pela regra pré-registada e explica porquê — a decisão e o tamanho são teus. P calibrada = frequência histórica verificada, não convicção. Brief completo (Radar, Estreantes, tabelas) em output/brief_2026-08-06.md.*
