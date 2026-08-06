@@ -25,6 +25,11 @@ FEATS = FEATS_V10  # ADOTADO — tribunal v10 2026-08-05, gates 1∧2∧3 (ver m
 # v12 braço B: + short-sale volume FINRA (PIT desde 2018-08; metodologia v12§2)
 FEATS_V12 = FEATS + ["short_ratio_z5", "short_ratio_z20"]
 FEATS = FEATS_V12  # ADOTADO — tribunal v12 2026-08-06, Gate 1 (spread passa 2-SE, t=4,61)
+# v14 fusão de colineares (r=0,77): remove prior_up_big_rate (gémeo fraco);
+# prior_avg_move fica como A família de volatilidade
+FEATS_V14 = [f for f in FEATS_V12 if f != "prior_up_big_rate"]
+FEATS = FEATS_V14  # ADOTADO — tribunal v14 2026-08-06 (Gates 1∧2∧3; evidência de
+                   # DESENVOLVIMENTO — painel visto; confirmação: walk-forward v15 + ledger)
 GBM_PARAMS = dict(max_iter=300, learning_rate=0.05, max_depth=4,
                   l2_regularization=1.0, random_state=42)
 N_FOLDS = 30

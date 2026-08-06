@@ -1,0 +1,14 @@
+{
+ "gate1_nao_regressao": true,
+ "gate1_diff_media": -0.00172,
+ "gate1_se": 0.018,
+ "braco_features": "B",
+ "gate2_edge_moonshot": true,
+ "gate2_captura_ok": true,
+ "gate2_wilson_ok": true,
+ "gate3_calibracao": true,
+ "n_buckets_n30": 5,
+ "adota_features_B": true,
+ "adota_cabeca_p20": true,
+ "adota_fusao_v14": true
+}

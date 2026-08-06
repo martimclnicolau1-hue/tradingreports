@@ -810,7 +810,19 @@ deadline duro 19:50 → aborta e alerta FALHA). REGRAS FIXADAS AGORA:
    (máx. 3 pesquisas, formato fechado, teste guide-down obrigatório).
 7. Runner local continua PRIMÁRIO até ao primeiro verde cloud completo.
 
-### ADENDA v14 — (por preencher: dry-run cloud, tribunal fusão, custo medido)
+### ADENDA v14-fusão (2026-08-06, ~17:20)
+Tribunal A(15f) vs B(14f, sem prior_up_big_rate): TOP-3 +1,10% vs +0,93%
+(diff −0,17pp ±1,80 — dentro de 1·SE, Gate 1 PASSA); ordenação MELHORA
+t=2,94→3,95; **Gate 2 PASSA** (captura p20 > baseline p5 E Wilson-lo95 >
+taxa-base — reportado por inteiro; nada omitido); Gate 3 PASSA (5 buckets
+n≥30). **FUSÃO ADOTADA (FEATS_V14, 14 features).** CAVEAT EXIGIDO PELO
+UTILIZADOR: esta evidência é de DESENVOLVIMENTO — o painel foi visto
+pelos tribunais v10-v14; a confirmação independente virá do walk-forward
+v15 (folds nunca reafinados) e do ledger live. Nota: os níveis absolutos
+de TOP-3 (~+1%) refletem o painel em expansão pós-piso (universo com
+small caps novos) — comparações A/B emparelhadas é que decidem.
+
+### ADENDA v14 — (por preencher: dry-run cloud, custo medido)
 
 ### NOTA v14.1 — fasquia de liquidez do pick CONFIRMADA (2026-08-06)
 Após contraditório do utilizador ("DCH/NRDS não me parecem boas ações"),

@@ -1,0 +1,178 @@
+{
+ "feats": [
+  "dist_52w_high",
+  "rsi14",
+  "mom60",
+  "prior_avg_move",
+  "sandbag",
+  "rel_volume",
+  "vix",
+  "dow",
+  "is_amc",
+  "n_events_same_day",
+  "log_close",
+  "log_dollar_vol",
+  "short_ratio_z5",
+  "short_ratio_z20"
+ ],
+ "gbm": {
+  "top1_mean": 0.0176,
+  "top1_se": 0.0382,
+  "top3_mean": 0.0093,
+  "top3_se": 0.0184,
+  "top3_by_fold": [
+   -0.0392,
+   -0.1296,
+   0.0974,
+   0.0666,
+   -0.0059,
+   0.0209,
+   -0.1283,
+   0.1998,
+   -0.0193,
+   0.0452,
+   0.0857,
+   0.0231,
+   -0.1129,
+   -0.0031,
+   0.0583,
+   0.2312,
+   0.1441,
+   -0.0526,
+   -0.2287,
+   -0.0225,
+   -0.1391,
+   0.0395,
+   0.0798,
+   0.0949,
+   -0.1203,
+   0.1056,
+   -0.0319,
+   -0.0027,
+   0.009,
+   0.0131
+  ],
+  "n_folds": 30,
+  "quintile_means": [
+   0.0008,
+   0.0017,
+   0.0015,
+   0.0067,
+   0.0093
+  ],
+  "spread_q5_q1": 0.0085,
+  "passes_2se": true,
+  "spearman_t": 3.95
+ },
+ "knn": null,
+ "conformal_coverage": 0.792,
+ "calibration": [
+  {
+   "bucket": "(0.0, 0.3]",
+   "n": 22760,
+   "previsto": 0.224,
+   "realizado": 0.223
+  },
+  {
+   "bucket": "(0.3, 0.4]",
+   "n": 3487,
+   "previsto": 0.323,
+   "realizado": 0.342
+  },
+  {
+   "bucket": "(0.4, 0.5]",
+   "n": 75,
+   "previsto": 0.428,
+   "realizado": 0.333
+  },
+  {
+   "bucket": "(0.5, 0.6]",
+   "n": 38,
+   "previsto": 0.535,
+   "realizado": 0.395
+  },
+  {
+   "bucket": "(0.6, 0.65]",
+   "n": 5,
+   "previsto": 0.625,
+   "realizado": 0.0
+  },
+  {
+   "bucket": "(0.65, 0.7]",
+   "n": 1,
+   "previsto": 0.67,
+   "realizado": 0.0
+  }
+ ],
+ "abstencao": {
+  "limiar": 0.65,
+  "pct_eventos_com_sinal": 0.0,
+  "hit_rate_no_sinal": 0.0
+ },
+ "calibration_20": [
+  {
+   "bucket": "(0.0, 0.02]",
+   "n": 12399,
+   "previsto": 0.007,
+   "realizado": 0.008
+  },
+  {
+   "bucket": "(0.02, 0.05]",
+   "n": 8970,
+   "previsto": 0.034,
+   "realizado": 0.041
+  },
+  {
+   "bucket": "(0.05, 0.1]",
+   "n": 3234,
+   "previsto": 0.066,
+   "realizado": 0.09
+  },
+  {
+   "bucket": "(0.1, 0.15]",
+   "n": 251,
+   "previsto": 0.118,
+   "realizado": 0.143
+  },
+  {
+   "bucket": "(0.15, 0.2]",
+   "n": 67,
+   "previsto": 0.165,
+   "realizado": 0.209
+  },
+  {
+   "bucket": "(0.2, 0.3]",
+   "n": 13,
+   "previsto": 0.236,
+   "realizado": 0.308
+  },
+  {
+   "bucket": "(0.3, 1.0]",
+   "n": 3,
+   "previsto": 0.376,
+   "realizado": 0.333
+  }
+ ],
+ "p20": {
+  "base_rate_test": 0.0314,
+  "n_test": 26384,
+  "n_pos": 828,
+  "precision_at3_daily": 0.0698,
+  "precision_wilson_lo95": 0.0615,
+  "capture_daily": 0.2765,
+  "capture_daily_p5_baseline": 0.2705,
+  "picks": 3210
+ },
+ "escolhido": {
+  "A_top1_mean": 0.0176,
+  "B_top1_mean": -0.0001,
+  "A_top1_p_neg": 0.5,
+  "B_top1_p_neg": 0.4,
+  "A_top1_downside": -0.146,
+  "B_top1_downside": -0.1265,
+  "B_top3_mean": 0.0074,
+  "diff_mean": -0.0177,
+  "diff_se": 0.024,
+  "adota_B": true
+ }
+}
