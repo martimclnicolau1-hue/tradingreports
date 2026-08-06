@@ -212,7 +212,8 @@ def _log_pick(pick, T):
     path = "data/picks_log.csv"
     if os.path.exists(path):
         log_df = pd.read_csv(path)
-        log_df = log_df[log_df.asof != T.isoformat()]  # substitui o pick do próprio dia
+        # NB: acesso por parênteses obrigatório — "asof" colide com DataFrame.asof()
+        log_df = log_df[log_df["asof"] != T.isoformat()]  # substitui o pick do próprio dia
         log_df = pd.concat([log_df, pd.DataFrame([row])], ignore_index=True)
         log_df.to_csv(path, index=False)
     else:
