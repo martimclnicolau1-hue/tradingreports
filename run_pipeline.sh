@@ -16,6 +16,7 @@ fail() {
   exit 1
 }
 deadline() {
+  [ "${DRYRUN:-0}" = "1" ] && return 0   # teste fora de horas não aborta
   if [ "$(date +%H%M)" -ge 1950 ]; then fail "deadline 19:50 excedido ($1)"; fi
 }
 retry() { "$@" || { echo "retry: $*"; sleep 30; "$@"; }; }

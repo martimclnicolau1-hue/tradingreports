@@ -32,6 +32,10 @@ def main():
               "Configura o secret no cloud environment (nunca no repo).")
         sys.exit(3)
     hoje = date.today().isoformat()
+    dry = os.environ.get("DRYRUN") == "1"
+    if dry:
+        global DESTINATARIOS
+        DESTINATARIOS = DEST_FALHA  # dry-run: só o dono recebe
     if "--failure" in sys.argv:
         motivo = sys.argv[sys.argv.index("--failure") + 1] if len(sys.argv) > 2 else "desconhecido"
         for to in DEST_FALHA:
