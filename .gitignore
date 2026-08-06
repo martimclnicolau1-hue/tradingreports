@@ -1,5 +1,8 @@
 .venv/
-data/
+data/*
+!data/chains/
+!data/estimates/
+!data/picks_log.csv
 output/brief_*
 output/calendario.md
 output/*.csv
