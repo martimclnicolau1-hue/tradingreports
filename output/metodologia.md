@@ -714,6 +714,17 @@ E o retorno médio do TOP-1 não degradar mais de 1·SE (diferenças
 emparelhadas). Caso contrário mantém-se A e a nota di-lo. Elegibilidade
 inalterada (zero flags); apresentação = v13.1.
 
+**ADENDA v13.2 (2026-08-06): REGRA B ADOTADA.** Tribunal (30 folds
+emparelhados, painel 27.184): P(y<0) do TOP-1 **56,7%→46,7%** (o gate de
+segurança); retorno médio igual (diff −0,00pp, SE 2,87pp — não degrada).
+Custo declarado no email: quando cai, cai mais fundo (−11,4% vs −9,4% —
+a regra evita quedas FREQUENTES, não quedas profundas). Nota de contexto:
+o nível absoluto do TOP-1 neste snapshot (~0%) reflete o universo em
+expansão + o ruído próprio do top-1 (SE ±2,9pp); a comparação A/B é
+emparelhada nos mesmos folds e é isso que decide. Nível citável = tribunal
+mensal no universo estabilizado. Aplicado ao email E à cabeça do brief
+(um só nº 1 em todo o produto).
+
 ### NOTA v13.1 — email de escolhido único (2026-08-06, pedido do utilizador)
 O EMAIL passa a conter UM único nome ("O Escolhido do dia") com o caso
 fundamental explicado por extenso (receita, margens, qualidade dos lucros,

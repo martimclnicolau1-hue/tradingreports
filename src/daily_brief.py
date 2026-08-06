@@ -156,7 +156,10 @@ def build_brief(today=None, csv_path="output/candidatos.csv"):
     if os.path.exists("output/gates_v10.json"):
         gates = json.load(open("output/gates_v10.json"))
     if "p_up5_cal" in el.columns and el.p_up5_cal.notna().any() and val:
-        cand = el[el.p_up5_cal.notna()].sort_values("gbm_ev", ascending=False)
+        # v13.2 ADOTADO: cabeça ordenada por EV ajustado ao risco (= regra do Escolhido)
+        cand = el[el.p_up5_cal.notna()].copy()
+        cand["_ra"] = cand.gbm_ev / (cand.gbm_q90 - cand.gbm_q10).clip(lower=1e-6)
+        cand = cand.sort_values("_ra", ascending=False)
         pick = cand.iloc[0] if len(cand) else None
         limiar = val.get("abstencao", {}).get("limiar", 0.65)
         if pick is not None:

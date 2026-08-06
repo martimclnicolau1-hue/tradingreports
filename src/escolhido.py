@@ -50,13 +50,16 @@ def build_escolhido(csv_path="output/candidatos.csv"):
     df["veto_flags"] = df["veto_v3"].fillna("") if "veto_v3" in df.columns else ""
     opp = df[((df.event_date == d_amc.isoformat()) & (df.timing.isin(["AMC", "?"]))) |
              ((df.event_date == d_bmo.isoformat()) & (df.timing == "BMO"))].copy()
-    el = opp[(opp.veto_flags == "") & opp.gbm_ev.notna() & opp.p_up5_cal.notna()]
+    el = opp[(opp.veto_flags == "") & opp.gbm_ev.notna() & opp.p_up5_cal.notna()].copy()
     if el.empty:
         md = ("# Sem escolhido hoje\n\nNenhum candidato elegível (sem flags, com score) "
               "na janela — dias vazios são informação, não falha.")
         _write(md, T)
         return None
-    pick = el.sort_values("gbm_ev", ascending=False).iloc[0]
+    # v13.2 ADOTADO: EV ajustado ao risco — "mais provável de subir mais COM segurança"
+    # (tribunal 2026-08-06: P(neg) do top-1 56,7%→46,7% com média igual)
+    el["rank_escolhido"] = el.gbm_ev / (el.gbm_q90 - el.gbm_q10).clip(lower=1e-6)
+    pick = el.sort_values("rank_escolhido", ascending=False).iloc[0]
     i = _info(pick.ticker)
     nome = i.get("shortName") or pick.ticker
     setor = i.get("sector") or "—"
@@ -119,9 +122,13 @@ def build_escolhido(csv_path="output/candidatos.csv"):
         exp.append(f"- Bateu o consenso em **{_pct(br, 0)}** dos últimos 8 trimestres" +
                    (" — máquina de beats." if br >= 0.75 else "."))
     if pd.notna(sb):
-        exp.append(f"- Surpresa média recente **{sb:+.0f}%** acima do consenso — "
-                   + ("sandbagging clássico: guiam baixo, esmagam depois." if sb > 20 else
-                      "surpresas contidas — o consenso anda perto da realidade."))
+        if sb > 20:
+            leitura = "sandbagging clássico: guiam baixo, esmagam depois."
+        elif sb < -15:
+            leitura = "⚠ falha o consenso POR HÁBITO — os analistas estão sistematicamente otimistas com este nome."
+        else:
+            leitura = "surpresas contidas — o consenso anda perto da realidade."
+        exp.append(f"- Surpresa média recente **{sb:+.0f}%** vs consenso — {leitura}")
     if pd.notna(bf):
         exp.append(f"- MAS bateu-e-caiu em **{_pct(bf, 0)}** dos beats — "
                    + ("quase nunca: quando bate, o mercado paga." if bf < 0.2 else
@@ -147,7 +154,7 @@ def build_escolhido(csv_path="output/candidatos.csv"):
     if pd.notna(cp):
         lado.append(f"- Opções: CPIV {100*cp:+.1f}pp ({'calls mais caras — inclinação bullish' if cp > 0 else 'puts mais caras — proteção procurada'}; "
                     "contexto do nosso arquivo, zero peso).")
-    if pd.notna(sm):
+    if pd.notna(sm) and abs(sm) < 0.5:  # |smirk|≥50pp = cadeia ilíquida, não sinal
         lado.append(f"- Smirk {100*sm:+.1f}pp ({'proteção OTM cara — cautela institucional' if sm > 0.05 else 'smirk plano — sem pânico embutido'}).")
     im = pick.get("implied_move_pct"); am = pick.get("avg_abs_move")
     if pd.notna(im) and pd.notna(am):
