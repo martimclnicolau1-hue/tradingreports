@@ -13,7 +13,7 @@ import sys
 import urllib.request
 from datetime import date
 
-DESTINATARIOS = ["luis@nikufra.ai", "matosrmf@gmail.com"]
+DESTINATARIOS = ["luis@nikufra.ai", "matosrmf@gmail.com", "vicenteccastanheira@gmail.com"]
 DEST_FALHA = ["luis@nikufra.ai"]
 
 
