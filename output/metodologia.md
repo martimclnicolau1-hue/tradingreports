@@ -745,3 +745,12 @@ continua a ser gerado e arquivado localmente (output/brief_*.md) para
 auditoria e consulta; simplesmente deixa de seguir por email. Linguagem:
 "o caso a favor/contra do nº 1", nunca diretivas de compra — decisões do
 utilizador (invariante v1).
+
+### NOTA v13.3 — horário e semântica do email (2026-08-06, pedido do utilizador)
+O email diário muda de 21:45 (pós-fecho, prazo do dia SEGUINTE) para
+**~20:00 seg-sex** (pipeline arranca 19:00; mercado ainda aberto): o modo
+pré-fecho (v10.1) passa a ser o PRODUTO PRINCIPAL — âmbito AMC de HOJE +
+BMO de amanhã, **prazo de decisão 21:00 do próprio dia** (~1h de janela de
+ação). Fins-de-semana sem eventos → sem email. Nenhuma mudança de método;
+apenas quando e com que âmbito o Escolhido é entregue. Quotes de opções
+passam a ser intraday ao vivo por construção (vantagem vs pós-fecho).
