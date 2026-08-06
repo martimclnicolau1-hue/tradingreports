@@ -8,6 +8,7 @@ cd "$(dirname "$0")"
 export TZ=Europe/Lisbon
 export EVENTCAL_ROLLING=1 EVENTCAL_TODAY=1
 PY="${PY:-python3}"
+FASE="${1:-tudo}"   # v15.2: "preparar" (até ao escolhido) | "enviar" (envio+estado) | "tudo"
 
 fail() {
   echo "FALHA: $1"
@@ -42,8 +43,12 @@ $PY -m src.daily_brief                          || fail "daily_brief"
 $PY -m src.escolhido                            || fail "escolhido"
 deadline "pré-envio"
 
-# 3) envio (o agente da routine insere a secção de pesquisa ANTES deste passo,
-#    conforme o bloco delimitado do prompt; sem pesquisa, segue sem a secção)
+if [ "$FASE" = "preparar" ]; then
+  echo "FASE PREPARAR OK $(date '+%H:%M') — escolhido pronto; segue a pesquisa do agente e depois: bash run_pipeline.sh enviar"
+  exit 0
+fi
+
+# 3) envio (a secção de pesquisa já foi inserida pelo agente entre as fases)
 $PY -m src.send_webhook                         || fail "envio webhook"
 
 # 4) pós-envio (não atrasa o email)
