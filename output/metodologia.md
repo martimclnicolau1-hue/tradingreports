@@ -700,6 +700,15 @@ ou ressurreição; única mudança de modelo (|y|) → tribunal.
    expansão".
 3. Painel de produção v13: **27.184 eventos, 1.091 tickers** (cresce à medida
    que os small caps backfillam), 844 moonshots ≥+20%.
+4. **CUSTO MEDIDO do universo sem piso (2026-08-06)**: 1.ª corrida = **1.703
+   candidatos em 4h28** (16.055s) — muito acima da estimativa de +15-25 min.
+   Diagnóstico: o backfill único de ~700 tickers novos + o facto de os
+   FUNDAMENTAIS serem o único fetch SEM cache (iam à rede todas as noites
+   para todos os tickers). CORREÇÃO (custo, não critério): fetch_financials
+   ganha cache de 72h (dados trimestrais toleram 3 dias) — noites seguintes
+   estimadas em 25-45 min com cache quente; a 1.ª noite de cada trimestre
+   paga o refresh. Se a noite exceder 60 min de forma persistente, aplica-se
+   o pré-registado: cap por LIQUIDEZ (nunca mcap) vai a decisão do utilizador.
 
 ### NOTA v13.2 — regra do Escolhido: EV ajustado ao risco (pré-registo ANTES do tribunal)
 Pedido do utilizador: "a que no global com segurança é a mais provável de

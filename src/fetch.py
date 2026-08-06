@@ -178,7 +178,20 @@ def fetch_implied_move(symbol):
 
 
 def fetch_financials(symbol):
-    """Demonstrações anuais/trimestrais para os scores forenses."""
+    """Demonstrações anuais/trimestrais para os scores forenses.
+    v13: cache de 72h (era o ÚNICO fetch sem cache — com o universo sem piso
+    tornava-se o custo dominante: 1.703 idas à rede por noite; dados
+    trimestrais toleram 3 dias de idade — custo, não critério)."""
+    import pickle
+    path = _cache_path(f"fin_{symbol}.pkl")
+    if os.path.exists(path) and (time.time() - os.path.getmtime(path)) < 72 * 3600:
+        try:
+            with open(path, "rb") as f:
+                out = pickle.load(f)
+            ok = any(df is not None and not df.empty for df in out.values())
+            return out, ok
+        except Exception:
+            pass  # cache corrompida → refetch
     try:
         t = get_ticker(symbol)
         out = {
@@ -191,6 +204,12 @@ def fetch_financials(symbol):
         }
         time.sleep(config.REQUEST_SLEEP)
         ok = any(df is not None and not df.empty for df in out.values())
+        if ok:
+            try:
+                with open(path, "wb") as f:
+                    pickle.dump(out, f)
+            except Exception:
+                pass
         return out, ok
     except Exception as e:
         print(f"  [WARN] financials {symbol}: {e}")
