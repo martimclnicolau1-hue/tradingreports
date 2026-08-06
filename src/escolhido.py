@@ -42,7 +42,7 @@ def _pctile(df, col, v):
     return round(100 * float((s < float(v)).mean()))
 
 
-def build_escolhido(csv_path="output/candidatos.csv"):
+def build_escolhido(csv_path="output/candidatos.csv", log=True):
     T = date.today()
     t1, t2 = T + timedelta(days=1), T + timedelta(days=2)
     d_amc, d_bmo, dl = (T, t1, T) if TODAY_MODE else (t1, t2, t1)
@@ -193,13 +193,15 @@ def build_escolhido(csv_path="output/candidatos.csv"):
       f"Brief completo (Radar, Estreantes, tabelas) em output/brief_{T.isoformat()}.md.*")
 
     md = "\n".join(L)
-    _log_pick(pick, T)
+    if log:
+        _log_pick(pick, T)
     return _write(md, T)
 
 
 def _log_pick(pick, T):
     """v13.5: ledger de escolhidos ao vivo — o veredito é ao evento ~20.
-    O monitor mensal preenche o y realizado (fecho-a-fecho) e publica a série."""
+    Dedupe por asof (a última geração do dia substitui previews anteriores);
+    o monitor preenche o y realizado (fecho-a-fecho) e publica a série."""
     row = {"asof": T.isoformat(), "ticker": pick.ticker, "event_date": pick.event_date,
            "timing": pick.timing, "regra": "v13.2_ra",
            "gbm_ev": round(float(pick.gbm_ev), 4),
@@ -208,7 +210,13 @@ def _log_pick(pick, T):
            "q10": round(float(pick.gbm_q10), 4), "q90": round(float(pick.gbm_q90), 4),
            "y_realizado": None}
     path = "data/picks_log.csv"
-    pd.DataFrame([row]).to_csv(path, mode="a", header=not os.path.exists(path), index=False)
+    if os.path.exists(path):
+        log_df = pd.read_csv(path)
+        log_df = log_df[log_df.asof != T.isoformat()]  # substitui o pick do próprio dia
+        log_df = pd.concat([log_df, pd.DataFrame([row])], ignore_index=True)
+        log_df.to_csv(path, index=False)
+    else:
+        pd.DataFrame([row]).to_csv(path, index=False)
 
 
 def _write(md, T):
