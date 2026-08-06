@@ -628,3 +628,58 @@ e a probabilidade complementar explícita. Racional documentado: o tribunal
 valida o edge no TOP-3 (±1,60), não no top-1 (±3,74) — o brief nomeia um mas
 mostra sempre os três. Também acrescentado modo pré-fecho (EVENTCAL_TODAY=1,
 AMC de hoje + BMO de amanhã, prazo hoje 21:00) — v10.1, mesma lógica.
+
+## REVISÃO v13 — 2026-08-06, registada ANTES de qualquer código ("a grande limpeza")
+
+Gatilho: o utilizador rejeitou o piso de mcap ($500M) após CLRO/FTK/AEIS; a
+auditoria exaustiva inventariou 147 regras numéricas — 38 arbitrárias (sem
+justificação em lado nenhum), 7 divergências código↔pré-registo, 4 regras
+mortas. Só 4 limiares têm custo/benefício MEDIDO (piso do Radar, ABSTAIN_P,
+BIG_UP20, vetos). Filosofia v13: exclusão silenciosa → visibilidade com
+flags; arbitrário → declarado; divergência → errata; morto → enterro formal
+ou ressurreição; única mudança de modelo (|y|) → tribunal.
+
+1. **MIN_MCAP REMOVIDO** (decisão do utilizador; v5§2 nunca teve evidência).
+   Custo declarado: universo ~2× (746-1.107 tickers estavam a ser cortados),
+   noturno +15-25 min (medido na 1ª corrida; se >60 min, qualquer cap futuro
+   será por LIQUIDEZ $/dia, nunca por mcap, e vai a decisão do utilizador).
+   Consequência honesta: entra lixo CLRO-class ($10M, dados mortos) — será
+   visível como Estreante/não-pontuável, nunca como pick. Protecções que
+   ficam (medidas): piso de liquidez do Radar, flags forenses, cabeça
+   zero-flags.
+2. **ESTREANTES**: candidatos na janela sem score (<4 eventos prévios ou
+   <260d de preços — IPOs recentes) ganham secção própria no brief (dados
+   observáveis: mcap, $/dia, implied, flags) SEM scores fabricados. Modelo
+   para estreantes = candidato v14 com tribunal próprio.
+3. **TRIBUNAL v13** (única mudança de modelo): braço A = painel com descarte
+   |y|>1,0 (status quo) vs braço B = |y|>2,0 + guarda de sanidade (Close
+   >$0,50 e Volume>0 nos dois dias da reação). Gates 1/3; Gate 2 rege só
+   cabeças novas (desambiguação v12). Adoção mecânica.
+4. **ERRATAS**: Radar exibe 5 (v10§9 dizia 3) — mantém-se 5, fica registado;
+   excluídos-pelo-piso listavam só 3 (contradizia "nunca silenciosos" v11§3)
+   → top-10 + contagem; ΔOI exige 6 snapshots (docstring dizia 5) → fixa-se
+   6; o filtro de spread 30% do RN-P dizia-se "pré-registado" sem o ser —
+   fica registado AGORA; RECALL_MIN_UNIVERSE=50 não era o recall de 95% do
+   v5§3 → implementa-se o recall real (ALWAYS_ENRICH com evento confirmado
+   fora do universo automático ⇒ aviso).
+5. **ENTERROS E RESSURREIÇÕES**: concordância de estimadores 1,5× (v4§3/v6§2)
+   ENTERRADA (morreu com os graus na v11; nada a substitui — registado);
+   ">40% de dados em falta não pode ser top pick" (v1§1) RESSUSCITADA como
+   flag "⚠ dados incompletos (X%)" na linha do pick (avisa, não exclui);
+   flag monthly_expiry (v1§5) passa finalmente a chegar ao brief (⏳ no
+   Radar/EV quando a expiração usada excede o evento em >10d); o ranking
+   /dev/null do rescore_v3 é apagado.
+6. **CONSTANTES OPERACIONAIS DECLARADAS** (sem mudança de comportamento;
+   alterações futuras exigem nota datada): buckets de calibração p5
+   [0,.3,.4,.5,.6,.65,.7,.8,1] e p20 [0,.02,.05,.10,.15,.20,.30,1]; mínimo
+   30 positivos/negativos para calibrar; FINRA z: janelas 5/20, base 120,
+   mínimo 60 obs; EMI ≥3 de 4 inputs; VIX staleness 5 dias; banda ΔOI
+   1,05-1,25× spot; smirk tolerância 0,1× e put 0,80× (paper); RN-P strikes
+   1,15×/1,25× tolerância 0,08× e mínimos 4/2 calls; tstat n≥30; painel:
+   260 barras / 60 pré-evento / 4 eventos prévios (mantidos — necessários às
+   features; a alternativa para <4 é a secção Estreantes, não imputação);
+   displays head(5/10/8/10); hype bins 70/40 e escala 50+20z; isascii passa
+   a CONTADO nas stats; âmbito unificado SCOPE_DAYS=3 (chains e
+   enriquecimento divergiam T+3 vs T+2 — unifica-se em 3).
+
+### ADENDA v13 — resultados (por preencher: universo novo, custo, tribunal |y|)
