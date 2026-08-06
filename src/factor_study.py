@@ -115,7 +115,7 @@ def build_panel():
             # v13: limiar parametrizado (braço B do tribunal usa EVENTCAL_YMAX=2.0);
             # entre 1,0 e YMAX só entra com guarda de sanidade (preço/volume válidos
             # nos 2 dias — apanha artefactos de dados sem matar movers reais >100%)
-            y_max = float(os.environ.get("EVENTCAL_YMAX", "1.0"))
+            y_max = float(os.environ.get("EVENTCAL_YMAX", "2.0"))  # v13 ADOTADO 2026-08-06
             ay = abs(ev["reaction"])
             if ay > y_max:
                 print(f"[build_panel] descartado |y|>{y_max}: {sym} {ev['date']} y={ev['reaction']:+.2f}")

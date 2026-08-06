@@ -682,4 +682,21 @@ ou ressurreição; única mudança de modelo (|y|) → tribunal.
    a CONTADO nas stats; âmbito unificado SCOPE_DAYS=3 (chains e
    enriquecimento divergiam T+3 vs T+2 — unifica-se em 3).
 
-### ADENDA v13 — resultados (por preencher: universo novo, custo, tribunal |y|)
+### ADENDA v13 — resultados (2026-08-06, manhã) + CONFISSÃO DE CONTAMINAÇÃO
+1. **Tribunal |y| (gates formais): A 26.073 vs B 26.630 eventos; TOP-3 +3,64→
+   +3,70; TOP-1 +1,20→+6,00; Gates 1∧3 PASSAM → YMAX=2,0+guarda ADOTADO.**
+2. **CONFISSÃO (apanhada na verificação pós-adoção): o braço B ficou
+   CONTAMINADO.** O rebuild do braço B correu em simultâneo com a primeira
+   corrida do universo sem piso, que estava a descarregar preços de tickers
+   novos — o braço B apanhou +557 eventos dos quais só **3** são movers >100%
+   recuperados pela regra nova; o resto é expansão de universo. A comparação
+   violou o princípio "painéis diferentes não se comparam" (v10§1). LEITURA
+   HONESTA: o salto do TOP-1 (+1,20→+6,00) atribui-se à EXPANSÃO DO UNIVERSO,
+   não à mudança do |y|; a mudança do |y| é quase-nula em tamanho (3 eventos
+   em 27k) e mantém-se adotada por ser inofensiva e conceptualmente correta
+   (movers reais não são "erros de dados"). RE-VALIDAÇÃO LIMPA: o tribunal
+   mensal (dia 1) re-corre no universo estabilizado — esse será o número
+   citável. Até lá, o brief cita as métricas v13B com a nota "universo em
+   expansão".
+3. Painel de produção v13: **27.184 eventos, 1.091 tickers** (cresce à medida
+   que os small caps backfillam), 844 moonshots ≥+20%.
