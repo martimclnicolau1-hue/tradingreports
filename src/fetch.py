@@ -39,9 +39,26 @@ def _load_cache(name, max_age_hours=24):
     return payload["data"]
 
 
+_YF_SESSION = None
+
+
+def yf_session():
+    """v15.2d: no runner cloud (proxy CCR), o egress reinicia o handshake TLS
+    impersonado do curl_cffi do yfinance (curl 35 em TODOS os fetches Yahoo);
+    uma sessão curl_cffi SEM impersonate passa (HTTP 200, verificado).
+    Localmente devolve None — comportamento por defeito do yfinance intacto."""
+    global _YF_SESSION
+    if os.environ.get("CCR_AGENT_PROXY_ENABLED") != "1":
+        return None
+    if _YF_SESSION is None:
+        from curl_cffi import requests as _cr
+        _YF_SESSION = _cr.Session()
+    return _YF_SESSION
+
+
 def get_ticker(symbol):
     import yfinance as yf
-    return yf.Ticker(symbol)
+    return yf.Ticker(symbol, session=yf_session())
 
 
 def fetch_earnings_dates(symbol, limit=100, force=False):

@@ -21,8 +21,8 @@ def vix_on(date_str):
         stale = os.path.exists(p) and (time.time() - os.path.getmtime(p)) > 5*86400
         if not os.path.exists(p) or stale:
             try:
-                import yfinance as yf
-                h = yf.Ticker("^VIX").history(period="10y")
+                from . import fetch
+                h = fetch.get_ticker("^VIX").history(period="10y")
                 h[["Close"]].to_csv(p)
             except Exception:
                 _VIX = False

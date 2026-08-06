@@ -859,3 +859,12 @@ metodológico muda (custo/fiabilidade, não critério):
    (DCH, gerado 16:52) mantém-se; re-runs de infraestrutura fora de
    horas não substituem o registo do dia (proteção manual nesta
    reconstrução; o dedupe por asof continua a reger a routine normal).
+6. **yfinance no cloud (achado do 1º teste real)**: o egress do runner
+   reinicia o handshake TLS impersonado do curl_cffi — 100% dos fetches
+   Yahoo falhavam com curl(35). Fix: sessão curl_cffi sem impersonate
+   criada em fetch.yf_session() quando CCR_AGENT_PROXY_ENABLED=1;
+   TODOS os yf.Ticker passam pelo fetch.get_ticker (5 call sites
+   consolidados). Local: comportamento por defeito intacto (session
+   None). Nota honesta: o endpoint do crumb do Yahoo faz rate-limit ao
+   IP partilhado do datacenter — a viabilidade do fetch cloud está em
+   observação no primeiro verde ponta-a-ponta.

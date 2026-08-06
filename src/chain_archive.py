@@ -24,9 +24,9 @@ from . import config
 def cpiv_and_os(sym):
     """CPIV (IV call − IV put, pares de strike ATM ±10%, ponderado por OI) e
     O/S (volume total de opções ×100 ÷ volume de ações). Snapshot arquivado."""
-    import yfinance as yf
+    from . import fetch
     try:
-        t = yf.Ticker(sym)
+        t = fetch.get_ticker(sym)
         exps = t.options
         if not exps:
             return None

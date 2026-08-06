@@ -34,8 +34,8 @@ def _flat(df, prefix):
 
 
 def snapshot_ticker(sym):
-    import yfinance as yf
-    t = yf.Ticker(sym)
+    from . import fetch
+    t = fetch.get_ticker(sym)
     row = {"ticker": sym}
     try:
         row.update(_flat(t.get_earnings_estimate(), "ee"))
