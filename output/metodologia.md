@@ -811,3 +811,12 @@ deadline duro 19:50 → aborta e alerta FALHA). REGRAS FIXADAS AGORA:
 7. Runner local continua PRIMÁRIO até ao primeiro verde cloud completo.
 
 ### ADENDA v14 — (por preencher: dry-run cloud, tribunal fusão, custo medido)
+
+### NOTA v14.1 — fasquia de liquidez do pick CONFIRMADA (2026-08-06)
+Após contraditório do utilizador ("DCH/NRDS não me parecem boas ações"),
+mediu-se a curva conforto↔edge com os candidatos do dia: piso $10M → EV
++2,3% (DCH, $1,4B, receita +69%); $50-100M → +1,5% (EQX); $500M → +0,2%
+(morto). Utilizador escolheu MANTER $10M — máximo edge, nomes
+desconhecidos aceites porque o email explica sempre o caso completo.
+A frase que fica: as ações famosas são as mais analisadas do planeta —
+o edge vive onde ninguém olha.
