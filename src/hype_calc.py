@@ -11,7 +11,7 @@ from datetime import date, timedelta
 import numpy as np
 import pandas as pd
 
-from . import altdata
+from . import altdata, config
 from .factor_study import load_prices
 
 
