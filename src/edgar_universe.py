@@ -52,6 +52,13 @@ def _get(url, retries=5):
             continue
         if r.status_code == 404:
             return None
+        if r.status_code >= 500:
+            # v15.2e: 502/503 esporádicos do SEC matavam o crawl aos 10k CIKs —
+            # tratam-se como queda de rede (backoff), nunca como erro fatal
+            wait = min(60 * (2 ** i), 900)
+            print(f"  [{r.status_code}] pausa {wait}s ({url[-40:]})")
+            time.sleep(wait)
+            continue
         r.raise_for_status()
         time.sleep(SLEEP)
         return r
