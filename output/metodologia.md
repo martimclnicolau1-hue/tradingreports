@@ -780,3 +780,34 @@ Um auditor externo (via utilizador) atacou a atribuição do Escolhido. Veredito
    (paridade backtest-live; sair na abertura quebra-a); ledger de escolhidos
    ao vivo (data/picks_log.csv) liquidado pelo monitor — o veredito da série
    é ao evento ~20, nunca ao evento 1.
+
+## REVISÃO v14 — 2026-08-06, registada ANTES do código (spec cloud do utilizador)
+
+Migração para runner cloud autónomo (routine 17:03 seg-sex, email ≤20:00,
+deadline duro 19:50 → aborta e alerta FALHA). REGRAS FIXADAS AGORA:
+1. **SEM TRADE HOJE**: o Escolhido só é nomeado se rank_ra ≥ 0,05 E
+   gbm_ev ≥ +1,0% E log_dollar_vol ≥ 7,0 (o piso do Radar aplica-se ao
+   pick). Abaixo de qualquer limiar → email "NÃO HÁ TRADE HOJE" (proibido
+   forçar o melhor de um dia mau). Valores iniciais declarados; revisão
+   apenas no tribunal mensal.
+2. **CUSTOS SUBTRAÍDOS**: EV líquido no email = EV − fricção estimada por
+   tier de liquidez (ldv≥8: 10bps; 7-8: 40bps) — haircut declarado, não
+   calibrado (sem dados de fills; o confronto do ledger vai medi-lo).
+3. **PLANO DE EXECUÇÃO no email** (parâmetros do próprio utilizador,
+   escritos no config: risco 0,5-1%/evento, janela 20:45-20:55, saída =
+   fecho seguinte). O sistema REPORTA o plano configurado; não é
+   recomendação (invariante v1).
+4. **TRIBUNAL v14 (fusão de colineares)**: braço A = 15 features atuais;
+   braço B = 14 (remove prior_up_big_rate, o gémeo fraco do par r=0,77 —
+   prior_avg_move fica como A família de volatilidade). Gates 1/3.
+5. **ESTADO CLOUD**: despensa portátil data/state.tar.gz (preços TRIMADOS
+   a 3 anos — chegam para todas as features PIT; earnings/info/fin/vix/
+   optclean/FINRA) commitada a cada corrida; rebuilds profundos de painel
+   (10 anos) ficam para o job mensal. Preços passam a fetch INCREMENTAL
+   (append desde a última barra; full refetch em falha).
+6. Envio por webhook Make (MAKE_WEBHOOK_URL em env do cloud, nunca no
+   repo); pesquisa das 19:40 = bloco delimitado do agente da routine
+   (máx. 3 pesquisas, formato fechado, teste guide-down obrigatório).
+7. Runner local continua PRIMÁRIO até ao primeiro verde cloud completo.
+
+### ADENDA v14 — (por preencher: dry-run cloud, tribunal fusão, custo medido)
