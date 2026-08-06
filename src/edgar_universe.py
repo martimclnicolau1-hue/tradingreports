@@ -34,9 +34,17 @@ YEARS = range(2019, 2026)
 SLEEP = 0.13  # ~7,7 req/s — abaixo do teto de 10 da SEC
 
 
-def _get(url, retries=3):
+def _get(url, retries=5):
     for i in range(retries):
-        r = requests.get(url, headers=HDR, timeout=30)
+        try:
+            r = requests.get(url, headers=HDR, timeout=30)
+        except requests.exceptions.RequestException as e:
+            # v15.1: quedas de ligação (No route to host, timeouts) não matam o
+            # crawl — backoff exponencial e retoma (o checkpoint protege o resto)
+            wait = min(60 * (2 ** i), 900)
+            print(f"  [rede] {type(e).__name__} — pausa {wait}s ({url[-40:]})")
+            time.sleep(wait)
+            continue
         if r.status_code in (403, 429):
             print(f"  [{r.status_code}] pausa 10 min ({url[-40:]})")
             time.sleep(600)
