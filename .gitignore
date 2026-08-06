@@ -3,6 +3,9 @@ data/*
 !data/chains/
 !data/estimates/
 !data/picks_log.csv
+!data/state.tar.gz
+!data/edgar/
+data/edgar/idx/
 output/brief_*
 output/calendario.md
 output/*.csv

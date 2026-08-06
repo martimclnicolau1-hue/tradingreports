@@ -222,7 +222,7 @@ def build_escolhido(csv_path="output/candidatos.csv", log=True):
       "Este é 1 evento de uma série — o veredito do sistema é ao evento ~20, nunca hoje.*")
     a("*O sistema nomeia o nº 1 pela regra pré-registada e explica porquê — a decisão e o "
       "tamanho são teus. P calibrada = frequência histórica verificada, não convicção. "
-      f"Brief completo (Radar, Estreantes, tabelas) em output/brief_{T.isoformat()}.md.*")
+      "Brief completo (Radar, Estreantes, tabelas) gerado e arquivado pela routine do dia.*")
 
     md = "\n".join(L)
     if log:

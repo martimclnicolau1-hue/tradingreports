@@ -51,12 +51,13 @@ def main():
     body = open(path).read()
     # ticker no subject (1ª linha do md)
     tk = "—"
+    primeira = ""  # v15.2c: sem o .md, "primeira" ficava por definir (NameError)
     md = f"output/escolhido_{hoje}.md"
     if os.path.exists(md):
         primeira = open(md).readline()
         if "—" in primeira:
             tk = primeira.split("—")[1].strip().split(" ")[0]
-    sem_trade = "Sem escolhido" in primeira if os.path.exists(md) else False
+    sem_trade = "Sem escolhido" in primeira
     subject = ("NÃO HÁ TRADE HOJE — dia sem candidato elegível" if sem_trade
                else f"O Escolhido de hoje — {tk} (prazo 21:00)")
     for to in DESTINATARIOS:

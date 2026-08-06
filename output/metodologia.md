@@ -832,3 +832,30 @@ mediu-se a curva conforto↔edge com os candidatos do dia: piso $10M → EV
 desconhecidos aceites porque o email explica sempre o caso completo.
 A frase que fica: as ações famosas são as mais analisadas do planeta —
 o edge vive onde ninguém olha.
+
+### NOTA v15.2c — reparações operacionais pós-perda de container (2026-08-06, noite)
+Auditoria completa em docs/plano_reparacao_2026-08-06.md. Nada
+metodológico muda (custo/fiabilidade, não critério):
+1. **.gitignore bloqueava a despensa**: `data/*` ignorava
+   data/state.tar.gz — o `git add` do run_pipeline recusava o ficheiro
+   com o erro engolido por `2>/dev/null`. A despensa v14§5 NUNCA chegou
+   a ser versionada; o estado da sessão de trabalho (caches, painel de
+   27k eventos, checkpoint EDGAR) morreu com o container. Exceções
+   acrescentadas (state.tar.gz e data/edgar/, sem idx/); o add deixa de
+   esconder erros.
+2. **run_pipeline.sh**: preservação do estado (pack+commit) passa a
+   correr SEMPRE — em sucesso, em falha de envio e em deadline — e o
+   monitor/snapshot correm mesmo sem email: o ledger não depende do
+   webhook. Antes, uma falha de envio abortava antes dos pós-processos
+   e perdia a noite inteira de estado.
+3. **Crawler EDGAR**: checkpoint gzipado e commitado a cada 500 CIKs —
+   o crawl v15-P2 passa a sobreviver à morte de containers, não só a
+   quedas de rede (v15.1). O crawl de hoje perdeu-se; recomeça do zero.
+4. **send_webhook**: NameError latente quando só existia o .html; e o
+   rodapé do email deixou de apontar para output/brief_*.md (gitignored
+   — o leitor nunca o podia abrir; o brief continua arquivado na sessão
+   da routine).
+5. Ledger intocado por reconstruções: o pick oficial de 2026-08-06
+   (DCH, gerado 16:52) mantém-se; re-runs de infraestrutura fora de
+   horas não substituem o registo do dia (proteção manual nesta
+   reconstrução; o dedupe por asof continua a reger a routine normal).
